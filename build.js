@@ -34,8 +34,9 @@ const CONFIG = {
 			'src/lib/visibility.js',
 			'src/util/',
 			'src/storage/simplestore.js',
-			'src/storage/adapters/webstorage.js',
-			'src/storage/adapters/cookie.js',
+			'src/storage/adapters/indexedDB.js',
+			// 'src/storage/adapters/webstorage.js',
+			// 'src/storage/adapters/cookie.js',
 			'src/lib/debugview.js',
 			'src/lib/nodetyper.js',
 			'src/lib/stylewrapper.js',
@@ -104,6 +105,7 @@ const CONFIG = {
 		'vendor/lz-string.min.js',
 		'vendor/FileSaver.min.js',
 		'vendor/seedrandom.min.js',
+		'vendor/dexie.min.js',
 		'vendor/console-hack.min.js'
 	],
 	twine1 : {

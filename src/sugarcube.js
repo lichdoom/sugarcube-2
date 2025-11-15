@@ -177,18 +177,20 @@ jQuery(() => {
 	}
 
 	// From this point on it's promises all the way down.
-	new Promise(resolve => {
+	new Promise(async resolve => {
 		// Initialize the story.
 		Story.init();
 
 		// Initialize the databases.
 		try {
-			SugarCube.storage = storage = SimpleStore.create(Story.id, true); // eslint-disable-line no-undef
 			SugarCube.session = session = SimpleStore.create(Story.id, false); // eslint-disable-line no-undef
+			SugarCube.storage = storage = SimpleStore.create(Story.id, true); // eslint-disable-line no-undef
 		}
 		catch (ex) {
 			throw new Error(L10n.get('warningNoStorage'));
 		}
+		// Wait for the session cache to be populated
+		await session.ready;
 
 		// Initialize the user interfaces.
 		//
