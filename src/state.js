@@ -82,7 +82,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 		};
 
 		if (noDelta) {
-			state.history = clone(_history);
+			state.history = session.get('state').delta;
 		}
 		else {
 			state.delta = historyDeltaEncode(_history);
@@ -262,7 +262,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 					throw new RangeError(`moment activation attempted with out-of-bounds index; need [0, ${historySize() - 1}], got ${moment}`);
 				}
 
-				_active = clone(_history[moment]);
+				_active = Config.history.maxStates > 1 ? clone(_history[moment]) : _history[moment];
 				break;
 			}
 
