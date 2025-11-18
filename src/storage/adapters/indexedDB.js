@@ -1,9 +1,8 @@
-/* global Serial, SimpleStore, Dexie */
+/* global Serial, SimpleStore */
 
 SimpleStore.adapters.push((() => {
 	// Adapter readiness state.
 	let _ok = false;
-
 
 	/*******************************************************************************
 		IndexedDBAdapter Class.
@@ -11,69 +10,91 @@ SimpleStore.adapters.push((() => {
 
 	class IndexedDBAdapter {
 		constructor(storageId, persistent) {
-			const prefix = `${storageId}${persistent ? 'Saves' : 'State'}`;
+			const name = `${storageId}${persistent ? 'Saves' : 'State'}`;
 			const cache = new Map();
+			
+			this.db = null;
+			this.cache = cache;
 
-			const db = new Dexie(prefix);
-			db.version(1).stores({ sugarcube : 'id' });
-
-			// Populate cache on initialization
-			this.ready = db.open()
-				.then(() => db.sugarcube.toArray())
-				.then(rows => {
-					for (const row of rows) {
-						cache.set(row.id, row.data);
-					}
-				})
+			// Open IndexedDB
+			this.ready = this.openDatabase(name)
+				.then(() => this.loadCache())
 				.catch(err => console.error('Error initializing IndexedDBAdapter:', err));
 
 			Object.defineProperties(this, {
-				_engine : {
-					value : db.sugarcube
+				name: {
+					value: 'IndexedDB'
 				},
-				_cache : {
-					value : cache
+				id: {
+					value: storageId
 				},
-				_prefix : {
-					value : prefix
-				},
-				_prefixRe : {
-					value : new RegExp(`^${RegExp.escape(prefix)}`)
-				},
-				name : {
-					value : 'IndexedDB'
-				},
-				id : {
-					value : storageId
-				},
-				persistent : {
-					value : Boolean(persistent)
+				persistent: {
+					value: Boolean(persistent)
 				}
 			});
 		}
 
+		// Open IndexedDB database
+		openDatabase(name) {
+			return new Promise((resolve, reject) => {
+				const request = indexedDB.open(name, 1);
+				
+				request.onupgradeneeded = (e) => {
+					const db = e.target.result;
+					db.createObjectStore('sugarcube', { keyPath: 'id' });
+				};
+				request.onerror = (e) => {
+					reject(`IndexedDB open error: ${e.target.error}`);
+				};
+				request.onsuccess = (e) => {
+					this.db = e.target.result;
+					resolve();
+				};
+			});
+		}
 
-		// Public methods.
+		// Load data from the database into cache
+		loadCache() {
+			return new Promise((resolve, reject) => {
+				const transaction = this.db.transaction('sugarcube', 'readonly');
+				const store = transaction.objectStore('sugarcube');
+				const request = store.getAll();
+
+				request.onsuccess = () => {
+					const rows = request.result;
+					for (const row of rows) {
+						this.cache.set(row.id, row.data);
+					}
+					resolve();
+				};
+
+				request.onerror = (e) => {
+					reject(`IndexedDB read error: ${e.target.error}`);
+				};
+			});
+		}
+
+		// Public methods
 		get size() {
-			return this._cache.size;
+			return this.cache.size;
 		}
 
 		keys() {
-			return [...this._cache.keys()];
+			return [...this.cache.keys()];
 		}
 
 		has(key) {
 			if (typeof key !== 'string' || !key) {
 				return false;
 			}
-			return this._cache.has(key);
+			return this.cache.has(key);
 		}
 
 		get(key) {
 			if (typeof key !== 'string' || !key) {
 				return null;
 			}
-			const value = this._cache.get(key);
+			const value = this.cache.get(key);
 			return value !== undefined ? Serial.parse(value) : null;
 		}
 
@@ -82,8 +103,16 @@ SimpleStore.adapters.push((() => {
 				return false;
 			}
 			const str = Serial.stringify(value);
-			this._cache.set(key, str);
-			this._engine.put({ id : key, data : str });
+			this.cache.set(key, str);
+
+			// Store in IndexedDB
+			const transaction = this.db.transaction('sugarcube', 'readwrite');
+			const store = transaction.objectStore('sugarcube');
+			const request = store.put({ id: key, data: str });
+
+			request.onerror = (e) => {
+				console.error('IndexedDB write error:', e.target.error);
+			};
 
 			return true;
 		}
@@ -92,14 +121,32 @@ SimpleStore.adapters.push((() => {
 			if (typeof key !== 'string' || !key) {
 				return false;
 			}
-			this._cache.delete(key);
-			this._engine.delete(key);
+			this.cache.delete(key);
+
+			// Delete from IndexedDB
+			const transaction = this.db.transaction('sugarcube', 'readwrite');
+			const store = transaction.objectStore('sugarcube');
+			const request = store.delete(key);
+
+			request.onerror = (e) => {
+				console.error('IndexedDB delete error:', e.target.error);
+			};
+
 			return true;
 		}
 
 		clear() {
-			this._cache.clear();
-			this._engine.clear();
+			this.cache.clear();
+
+			// Clear all data from IndexedDB
+			const transaction = this.db.transaction('sugarcube', 'readwrite');
+			const store = transaction.objectStore('sugarcube');
+			const request = store.clear();
+
+			request.onerror = (e) => {
+				console.error('IndexedDB clear error:', e.target.error);
+			};
+
 			return true;
 		}
 	}
@@ -118,7 +165,7 @@ SimpleStore.adapters.push((() => {
 
 	function init() {
 		// IndexedDB feature test.
-		_ok = 'indexedDB' in window && Dexie;
+		_ok = 'indexedDB' in window;
 
 		return _ok;
 	}
@@ -128,7 +175,7 @@ SimpleStore.adapters.push((() => {
 	*******************************************************************************/
 
 	return Object.preventExtensions(Object.create(null, {
-		init   : { value : init },
-		create : { value : create }
+		init: { value: init },
+		create: { value: create }
 	}));
 })());

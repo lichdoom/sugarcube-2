@@ -105,7 +105,6 @@ const CONFIG = {
 		'vendor/lz-string.min.js',
 		'vendor/FileSaver.min.js',
 		'vendor/seedrandom.min.js',
-		'vendor/dexie.min.js',
 		'vendor/console-hack.min.js'
 	],
 	twine1 : {
