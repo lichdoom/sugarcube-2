@@ -46,7 +46,11 @@ SimpleStore.adapters.push((() => {
 				const request = indexedDB.open(name, 1);
 				
 				request.onupgradeneeded = e => {
-					e.target.result.createObjectStore('sugarcube', { keyPath: 'id' });
+					try {
+						e.target.result.createObjectStore('sugarcube', { keyPath: 'id' });
+					} catch (err) {
+						reject(`Error during DB upgrade: ${err}`);
+					}
 				};
 				request.onerror = e => {
 					reject(`IndexedDB open error: ${e.target.error}`);
