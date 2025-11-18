@@ -82,7 +82,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 		};
 
 		if (noDelta) {
-			state.history = session.get('state').delta;
+			state.history = Config.history.maxStates > 1 ? clone(_history) : session.get('state').delta;
 		}
 		else {
 			state.delta = historyDeltaEncode(_history);
