@@ -13,15 +13,21 @@ SimpleStore.adapters.push((() => {
 			const name = `${storageId}${persistent ? 'Saves' : 'State'}`;
 			const cache = new Map();
 			
-			this.db = null;
-			this.cache = cache;
+			this._db = null;
 
 			// Open IndexedDB
-			this.ready = this.openDatabase(name)
-				.then(() => this.loadCache())
+			this.ready = this._openDatabase(name)
+				.then(() => this._loadCache(cache))
 				.catch(err => console.error('Error initializing IndexedDBAdapter:', err));
 
 			Object.defineProperties(this, {
+				_db : {
+					configurable: false,
+					enumerable: false,
+				},
+				_cache : {
+					value : cache
+				},
 				name: {
 					value: 'IndexedDB'
 				},
@@ -35,40 +41,38 @@ SimpleStore.adapters.push((() => {
 		}
 
 		// Open IndexedDB database
-		openDatabase(name) {
+		_openDatabase(name) {
 			return new Promise((resolve, reject) => {
 				const request = indexedDB.open(name, 1);
 				
-				request.onupgradeneeded = (e) => {
-					const db = e.target.result;
-					db.createObjectStore('sugarcube', { keyPath: 'id' });
+				request.onupgradeneeded = e => {
+					e.target.result.createObjectStore('sugarcube', { keyPath: 'id' });
 				};
-				request.onerror = (e) => {
+				request.onerror = e => {
 					reject(`IndexedDB open error: ${e.target.error}`);
 				};
-				request.onsuccess = (e) => {
-					this.db = e.target.result;
+				request.onsuccess = e => {
+					this._db = e.target.result;
 					resolve();
 				};
 			});
 		}
 
 		// Load data from the database into cache
-		loadCache() {
+		_loadCache(cache) {
 			return new Promise((resolve, reject) => {
-				const transaction = this.db.transaction('sugarcube', 'readonly');
+				const transaction = this._db.transaction('sugarcube', 'readonly');
 				const store = transaction.objectStore('sugarcube');
 				const request = store.getAll();
 
 				request.onsuccess = () => {
 					const rows = request.result;
 					for (const row of rows) {
-						this.cache.set(row.id, row.data);
+						cache.set(row.id, row.data);
 					}
 					resolve();
 				};
-
-				request.onerror = (e) => {
+				request.onerror = e => {
 					reject(`IndexedDB read error: ${e.target.error}`);
 				};
 			});
@@ -76,25 +80,25 @@ SimpleStore.adapters.push((() => {
 
 		// Public methods
 		get size() {
-			return this.cache.size;
+			return this._cache.size;
 		}
 
 		keys() {
-			return [...this.cache.keys()];
+			return [...this._cache.keys()];
 		}
 
 		has(key) {
 			if (typeof key !== 'string' || !key) {
 				return false;
 			}
-			return this.cache.has(key);
+			return this._cache.has(key);
 		}
 
 		get(key) {
 			if (typeof key !== 'string' || !key) {
 				return null;
 			}
-			const value = this.cache.get(key);
+			const value = this._cache.get(key);
 			return value !== undefined ? Serial.parse(value) : null;
 		}
 
@@ -103,14 +107,14 @@ SimpleStore.adapters.push((() => {
 				return false;
 			}
 			const str = Serial.stringify(value);
-			this.cache.set(key, str);
+			this._cache.set(key, str);
 
 			// Store in IndexedDB
-			const transaction = this.db.transaction('sugarcube', 'readwrite');
+			const transaction = this._db.transaction('sugarcube', 'readwrite');
 			const store = transaction.objectStore('sugarcube');
 			const request = store.put({ id: key, data: str });
 
-			request.onerror = (e) => {
+			request.onerror = e => {
 				console.error('IndexedDB write error:', e.target.error);
 			};
 
@@ -121,14 +125,14 @@ SimpleStore.adapters.push((() => {
 			if (typeof key !== 'string' || !key) {
 				return false;
 			}
-			this.cache.delete(key);
+			this._cache.delete(key);
 
 			// Delete from IndexedDB
-			const transaction = this.db.transaction('sugarcube', 'readwrite');
+			const transaction = this._db.transaction('sugarcube', 'readwrite');
 			const store = transaction.objectStore('sugarcube');
 			const request = store.delete(key);
 
-			request.onerror = (e) => {
+			request.onerror = e => {
 				console.error('IndexedDB delete error:', e.target.error);
 			};
 
@@ -136,14 +140,14 @@ SimpleStore.adapters.push((() => {
 		}
 
 		clear() {
-			this.cache.clear();
+			this._cache.clear();
 
 			// Clear all data from IndexedDB
-			const transaction = this.db.transaction('sugarcube', 'readwrite');
+			const transaction = this._db.transaction('sugarcube', 'readwrite');
 			const store = transaction.objectStore('sugarcube');
 			const request = store.clear();
 
-			request.onerror = (e) => {
+			request.onerror = e => {
 				console.error('IndexedDB clear error:', e.target.error);
 			};
 
