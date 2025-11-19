@@ -37,21 +37,24 @@ SimpleStore.adapters.push((() => {
 		// Open IndexedDB database
 		_openDatabase(name) {
 			return new Promise((resolve, reject) => {
-				const request = indexedDB.open(name, 1);
-				
-				request.onupgradeneeded = e => {
+				const req = indexedDB.open(name, 1);
+
+				req.onupgradeneeded = e => {
 					try {
-						e.target.result.createObjectStore('sugarcube', { keyPath: 'id' });
+						const db = req.result;
+						if (!db.objectStoreNames.contains('sugarcube')) {
+							db.createObjectStore('sugarcube', { keyPath: 'id' });
+						}
 					} catch (err) {
 						reject(`Error during DB upgrade: ${err}`);
 					}
 				};
-				request.onerror = e => {
-					reject(`IndexedDB open error: ${e.target.error}`);
+				req.onerror = e => {
+					reject(`IndexedDB open error: ${req.error}`);
 				};
-				request.onsuccess = e => {
+				req.onsuccess = e => {
 					Object.defineProperties(this, {
-						_db : { value : e.target.result }
+						_db : { value : req.result }
 					})
 					resolve();
 				};
@@ -61,21 +64,23 @@ SimpleStore.adapters.push((() => {
 		// Load data from the database into cache
 		_loadCache(cache) {
 			return new Promise((resolve, reject) => {
-				const transaction = this._db.transaction('sugarcube', 'readonly');
-				const store = transaction.objectStore('sugarcube');
-				const request = store.getAll();
+				const store = this._tx('readonly');
+				const req = store.getAll();
 
-				request.onsuccess = () => {
-					const rows = request.result;
-					for (const row of rows) {
+				req.onsuccess = e => {
+					for (const row of req.result) {
 						cache.set(row.id, row.data);
 					}
 					resolve();
 				};
-				request.onerror = e => {
-					reject(`IndexedDB read error: ${e.target.error}`);
+				req.onerror = e => {
+					reject(`IndexedDB read error: ${req.error}`);
 				};
 			});
+		}
+
+		_tx(mode = 'readwrite') {
+			return this._db.transaction('sugarcube', mode).objectStore('sugarcube');
 		}
 
 		// Public methods
@@ -88,10 +93,7 @@ SimpleStore.adapters.push((() => {
 		}
 
 		has(key) {
-			if (typeof key !== 'string' || !key) {
-				return false;
-			}
-			return this._cache.has(key);
+			return typeof key === 'string' && this._cache.has(key);
 		}
 
 		get(key) {
@@ -99,7 +101,7 @@ SimpleStore.adapters.push((() => {
 				return null;
 			}
 			const value = this._cache.get(key);
-			return value !== undefined ? Serial.parse(value) : null;
+			return value === undefined ? null : Serial.parse(value);
 		}
 
 		set(key, value) {
@@ -110,12 +112,11 @@ SimpleStore.adapters.push((() => {
 			this._cache.set(key, str);
 
 			// Store in IndexedDB
-			const transaction = this._db.transaction('sugarcube', 'readwrite');
-			const store = transaction.objectStore('sugarcube');
-			const request = store.put({ id: key, data: str });
+			const store = this._tx();
+			const req = store.put({ id: key, data: str });
 
-			request.onerror = e => {
-				console.error('IndexedDB write error:', e.target.error);
+			req.onerror = e => {
+				console.error('IndexedDB write error:', req.error);
 			};
 
 			return true;
@@ -127,13 +128,12 @@ SimpleStore.adapters.push((() => {
 			}
 			this._cache.delete(key);
 
-			// Delete from IndexedDB
-			const transaction = this._db.transaction('sugarcube', 'readwrite');
-			const store = transaction.objectStore('sugarcube');
-			const request = store.delete(key);
+			// Delete key from IndexedDB
+			const store = this._tx();
+			const req = store.delete(key);
 
-			request.onerror = e => {
-				console.error('IndexedDB delete error:', e.target.error);
+			req.onerror = e => {
+				console.error('IndexedDB delete error:', req.error);
 			};
 
 			return true;
@@ -142,13 +142,12 @@ SimpleStore.adapters.push((() => {
 		clear() {
 			this._cache.clear();
 
-			// Clear all data from IndexedDB
-			const transaction = this._db.transaction('sugarcube', 'readwrite');
-			const store = transaction.objectStore('sugarcube');
-			const request = store.clear();
+			// Clear all records from IndexedDB
+			const store = this._tx();
+			const req = store.clear();
 
-			request.onerror = e => {
-				console.error('IndexedDB clear error:', e.target.error);
+			req.onerror = e => {
+				console.error('IndexedDB clear error:', req.error);
 			};
 
 			return true;
@@ -179,7 +178,7 @@ SimpleStore.adapters.push((() => {
 	*******************************************************************************/
 
 	return Object.preventExtensions(Object.create(null, {
-		init: { value: init },
-		create: { value: create }
+		init   : { value : init },
+		create : { value : create }
 	}));
 })());
