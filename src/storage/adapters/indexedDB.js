@@ -10,10 +10,8 @@ SimpleStore.adapters.push((() => {
 
 	class IndexedDBAdapter {
 		constructor(storageId, persistent) {
-			const name = `${storageId}${persistent ? 'Saves' : 'State'}`;
+			const name = `${storageId}_${persistent ? 'Saves' : 'State'}`;
 			const cache = new Map();
-			
-			this._db = null;
 
 			// Open IndexedDB
 			this.ready = this._openDatabase(name)
@@ -21,10 +19,6 @@ SimpleStore.adapters.push((() => {
 				.catch(err => console.error('Error initializing IndexedDBAdapter:', err));
 
 			Object.defineProperties(this, {
-				_db : {
-					configurable: false,
-					enumerable: false,
-				},
 				_cache : {
 					value : cache
 				},
@@ -56,7 +50,9 @@ SimpleStore.adapters.push((() => {
 					reject(`IndexedDB open error: ${e.target.error}`);
 				};
 				request.onsuccess = e => {
-					this._db = e.target.result;
+					Object.defineProperties(this, {
+						_db : { value : e.target.result }
+					})
 					resolve();
 				};
 			});
