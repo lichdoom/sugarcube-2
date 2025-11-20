@@ -13,14 +13,14 @@ SimpleStore.adapters.push((() => {
 			const name = `${storageId}_${persistent ? 'Saves' : 'State'}`;
 			const cache = new Map();
 
-			// Open IndexedDB
-			this.ready = this._openDatabase(name)
-				.then(() => this._loadCache(cache))
-				.catch(err => console.error('Error initializing IndexedDBAdapter:', err));
-
 			Object.defineProperties(this, {
 				_cache : {
 					value : cache
+				},
+				ready : {
+					value : this._openDatabase(name)
+						.then(() => this._loadCache(cache))
+						.catch(err => console.error('Error initializing IndexedDBAdapter:', err))
 				},
 				name: {
 					value: 'IndexedDB'
