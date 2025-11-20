@@ -189,6 +189,8 @@ jQuery(() => {
 		catch (ex) {
 			throw new Error(L10n.get('warningNoStorage'));
 		}
+		// Wait for the session cache to be populated
+		await Promise.all([session.ready, storage.ready]);
 
 		// Initialize the user interfaces.
 		//
@@ -215,9 +217,6 @@ jQuery(() => {
 
 		// Initialize the debug bar interface.
 		DebugBar.init();
-
-		// Wait for the session cache to be populated
-		await session.ready;
 
 		// Schedule the start of the engine and interfaces once both the DOM is
 		// reporting non-empty dimensions for the viewport and our loading screen

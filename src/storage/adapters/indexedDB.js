@@ -10,15 +10,10 @@ SimpleStore.adapters.push((() => {
 
 	class IndexedDBAdapter {
 		constructor(storageId, persistent) {
-			const cache = new Map();
-
 			Object.defineProperties(this, {
-				_cache: {
-					value: cache
-				},
 				ready : {
 					value : this._openDatabase(`${storageId}_${persistent ? 'Saves' : 'State'}`)
-						.then(() => this._loadCache(cache))
+						.then(() => this._loadCache())
 						.catch(err => console.error('Error initializing IndexedDBAdapter:', err))
 				},
 				name: {
@@ -49,6 +44,7 @@ SimpleStore.adapters.push((() => {
 				};
 				req.onsuccess = e => {
 					Object.defineProperties(this, {
+						_cache : { value : new Map() },
 						_db :    { value : req.result }
 					})
 					resolve();
@@ -57,14 +53,14 @@ SimpleStore.adapters.push((() => {
 		}
 
 		// Load data from the database into cache
-		_loadCache(cache) {
+		_loadCache() {
 			return new Promise((resolve, reject) => {
 				const store = this._tx('readonly');
 				const req = store.getAll();
 
 				req.onsuccess = e => {
 					for (const row of req.result) {
-						cache.set(row.id, row.data);
+						this._cache.set(row.id, row.data);
 					}
 					resolve();
 				};
