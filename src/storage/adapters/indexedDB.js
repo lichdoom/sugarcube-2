@@ -10,16 +10,10 @@ SimpleStore.adapters.push((() => {
 
 	class IndexedDBAdapter {
 		constructor(storageId, persistent) {
-			const name = `${storageId}_${persistent ? 'Saves' : 'State'}`;
-			const cache = new Map();
-
 			Object.defineProperties(this, {
-				_cache : {
-					value : cache
-				},
 				ready : {
-					value : this._openDatabase(name)
-						.then(() => this._loadCache(cache))
+					value : this._openDatabase(`${storageId}_${persistent ? 'Saves' : 'State'}`)
+						.then(() => this._loadCache())
 						.catch(err => console.error('Error initializing IndexedDBAdapter:', err))
 				},
 				name: {
@@ -40,13 +34,9 @@ SimpleStore.adapters.push((() => {
 				const req = indexedDB.open(name, 1);
 
 				req.onupgradeneeded = e => {
-					try {
-						const db = req.result;
-						if (!db.objectStoreNames.contains('sugarcube')) {
-							db.createObjectStore('sugarcube', { keyPath: 'id' });
-						}
-					} catch (err) {
-						reject(`Error during DB upgrade: ${err}`);
+					const db = req.result;
+					if (!db.objectStoreNames.contains('sugarcube')) {
+						db.createObjectStore('sugarcube', { keyPath: 'id' });
 					}
 				};
 				req.onerror = e => {
@@ -54,7 +44,8 @@ SimpleStore.adapters.push((() => {
 				};
 				req.onsuccess = e => {
 					Object.defineProperties(this, {
-						_db : { value : req.result }
+						_db :    { value : req.result },
+						_cache : { value : new Map() }
 					})
 					resolve();
 				};
@@ -62,19 +53,19 @@ SimpleStore.adapters.push((() => {
 		}
 
 		// Load data from the database into cache
-		_loadCache(cache) {
+		_loadCache() {
 			return new Promise((resolve, reject) => {
 				const store = this._tx('readonly');
 				const req = store.getAll();
 
 				req.onsuccess = e => {
 					for (const row of req.result) {
-						cache.set(row.id, row.data);
+						this._cache.set(row.id, row.data);
 					}
 					resolve();
 				};
 				req.onerror = e => {
-					reject(`IndexedDB read error: ${req.error}`);
+					reject(`IndexedDB load cache error: ${req.error}`);
 				};
 			});
 		}
