@@ -189,7 +189,7 @@ jQuery(() => {
 		catch (ex) {
 			throw new Error(L10n.get('warningNoStorage'));
 		}
-		// Wait for the session cache to be populated
+		// Wait for the cache to be populated
 		await Promise.all([session.ready, storage.ready]);
 
 		// Initialize the user interfaces.
