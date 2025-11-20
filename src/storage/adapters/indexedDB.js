@@ -12,9 +12,7 @@ SimpleStore.adapters.push((() => {
 		constructor(storageId, persistent) {
 			Object.defineProperties(this, {
 				ready : {
-					value : this._openDatabase(`${storageId}_${persistent ? 'Saves' : 'State'}`)
-						.then(() => this._loadCache())
-						.catch(err => console.error('Error initializing IndexedDBAdapter:', err))
+					value : this._init(`${storageId}_${persistent ? 'Saves' : 'State'}`)
 				},
 				name : {
 					value : 'IndexedDB'
@@ -26,6 +24,17 @@ SimpleStore.adapters.push((() => {
 					value : Boolean(persistent)
 				}
 			});
+		}
+
+		async _init(name) {
+			try {
+				await this._openDatabase(name);
+				await this._loadCache();
+			}
+			catch (err) {
+				console.error('Error initializing IndexedDBAdapter:', err);
+				throw err;
+			}
 		}
 
 		// Open IndexedDB database
