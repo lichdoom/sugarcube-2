@@ -193,9 +193,9 @@ jQuery(() => {
 		await Promise.all([session.ready, storage.ready]);
 
 		// Detect a brand-new tab
-		if (!sessionStorage.getItem('freshTab')) {
-			sessionStorage.setItem('freshTab', '1');
-			session.clear();  // safe place to reset IndexedDB
+		if (!sessionStorage.getItem(Story.id)) {
+			sessionStorage.setItem(Story.id, true);
+			session.clear();
 		}
 
 		// Initialize the user interfaces.
