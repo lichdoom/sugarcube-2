@@ -4,21 +4,14 @@ SimpleStore.adapters.push((() => {
 	// Adapter readiness state.
 	let ok = false;
 
-
 	/*******************************************************************************
 		IndexedDBAdapter Class.
 	*******************************************************************************/
 
 	class IndexedDBAdapter {
 		// Private fields.
-		#db;   // Our database engine.
-		#cache;// DB cache
-
-		// Public fields.
-		name;       // Our name.
-		id;         // Our storage ID.
-		persistent; // Are we a persistent store?
-
+		#db;    // IndexedDb instance
+		#cache; // DB cache
 
 		constructor(storageId, persistent) {
 			Object.defineProperties(this, {
@@ -28,7 +21,6 @@ SimpleStore.adapters.push((() => {
 				name : {
 					value : 'IndexedDB'
 				},
-
 				id : {
 					value : storageId
 				},
@@ -38,8 +30,7 @@ SimpleStore.adapters.push((() => {
 			});
 		}
 
-		// Private methods.
-
+		// Private methods
 		async #init(name) {
 			try {
 				await this.#openDB(name);
@@ -50,6 +41,7 @@ SimpleStore.adapters.push((() => {
 			}
 		}
 
+		// Open IndexedDB database
 		#openDB(name) {
 			return new Promise((resolve, reject) => {
 				const req = indexedDB.open(name, 1);
@@ -71,6 +63,7 @@ SimpleStore.adapters.push((() => {
 			});
 		}
 
+		// Load data from the database into cache
 		#loadCache() {
 			return new Promise((resolve, reject) => {
 				const store = this.#tx('readonly');
@@ -92,9 +85,7 @@ SimpleStore.adapters.push((() => {
 			return this.#db.transaction('sugarcube', mode).objectStore('sugarcube');
 		}
 
-
-		// Public methods.
-
+		// Public methods
 		get size() {
 			return this.#cache.size;
 		}
