@@ -28,7 +28,7 @@ SimpleStore.adapters.push((() => {
 
 		async _init(name) {
 			try {
-				await this._openDatabase(name);
+				await this._openDB(name);
 				await this._loadCache();
 			}
 			catch (ex) {
@@ -37,7 +37,7 @@ SimpleStore.adapters.push((() => {
 		}
 
 		// Open IndexedDB database
-		_openDatabase(name) {
+		_openDB(name) {
 			return new Promise((resolve, reject) => {
 				const req = indexedDB.open(name, 1);
 
@@ -103,6 +103,7 @@ SimpleStore.adapters.push((() => {
 			if (typeof key !== 'string' || !key) {
 				return null;
 			}
+
 			const value = this._cache.get(key);
 			return value === undefined ? null : Serial.parse(value);
 		}
@@ -111,6 +112,7 @@ SimpleStore.adapters.push((() => {
 			if (typeof key !== 'string' || !key) {
 				return false;
 			}
+
 			const str = Serial.stringify(value);
 			this._cache.set(key, str);
 
@@ -129,6 +131,7 @@ SimpleStore.adapters.push((() => {
 			if (typeof key !== 'string' || !key) {
 				return false;
 			}
+
 			this._cache.delete(key);
 
 			// Delete key from IndexedDB
