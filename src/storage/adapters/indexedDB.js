@@ -121,7 +121,7 @@ SimpleStore.adapters.push((() => {
 			const req = store.put({ id : key, data : str });
 
 			req.onerror = () => {
-				throw req.error;
+				console.log(req.error);
 			};
 
 			return true;
@@ -139,7 +139,7 @@ SimpleStore.adapters.push((() => {
 			const req = store.delete(key);
 
 			req.onerror = () => {
-				throw req.error;
+				console.log(req.error);
 			};
 
 			return true;
@@ -153,7 +153,7 @@ SimpleStore.adapters.push((() => {
 			const req = store.clear();
 
 			req.onerror = () => {
-				throw req.error;
+				console.log(req.error);
 			};
 
 			return true;
