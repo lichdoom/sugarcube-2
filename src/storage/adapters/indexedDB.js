@@ -32,7 +32,7 @@ SimpleStore.adapters.push((() => {
 				await this._loadCache();
 			}
 			catch (ex) {
-				throw ex;
+				console.log(ex);
 			}
 		}
 
