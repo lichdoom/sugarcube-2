@@ -31,9 +31,8 @@ SimpleStore.adapters.push((() => {
 				await this._openDatabase(name);
 				await this._loadCache();
 			}
-			catch (err) {
-				console.error('Error initializing IndexedDBAdapter:', err);
-				throw err;
+			catch (ex) {
+				throw ex;
 			}
 		}
 
@@ -49,7 +48,6 @@ SimpleStore.adapters.push((() => {
 					}
 				};
 				req.onerror = () => {
-					console.error(`IndexedDB open error: ${req.error}`);
 					reject(req.error);
 				};
 				req.onsuccess = () => {
@@ -72,15 +70,14 @@ SimpleStore.adapters.push((() => {
 				const store = this._tx('readonly');
 				const req = store.getAll();
 
+				req.onerror = () => {
+					reject(req.error);
+				};
 				req.onsuccess = () => {
 					for (const row of req.result) {
 						this._cache.set(row.id, row.data);
 					}
 					resolve();
-				};
-				req.onerror = () => {
-					console.error(`IndexedDB load cache error: ${req.error}`);
-					reject(req.error);
 				};
 			});
 		}
@@ -122,7 +119,7 @@ SimpleStore.adapters.push((() => {
 			const req = store.put({ id : key, data : str });
 
 			req.onerror = () => {
-				console.error('IndexedDB write error:', req.error);
+				throw req.error;
 			};
 
 			return true;
@@ -139,7 +136,7 @@ SimpleStore.adapters.push((() => {
 			const req = store.delete(key);
 
 			req.onerror = () => {
-				console.error('IndexedDB delete error:', req.error);
+				throw req.error;
 			};
 
 			return true;
@@ -153,7 +150,7 @@ SimpleStore.adapters.push((() => {
 			const req = store.clear();
 
 			req.onerror = () => {
-				console.error('IndexedDB clear error:', req.error);
+				throw req.error;
 			};
 
 			return true;
