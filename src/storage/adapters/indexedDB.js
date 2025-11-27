@@ -104,16 +104,16 @@ SimpleStore.adapters.push((() => {
 				return null;
 			}
 
-			const value = this._cache.get(key);
-			return value === undefined ? null : Serial.parse(value);
+			const data = this._cache.get(key);
+			return data === undefined ? null : Serial.parse(data);
 		}
 
-		set(key, value) {
+		set(key, data) {
 			if (typeof key !== 'string' || !key) {
 				return false;
 			}
 
-			const str = Serial.stringify(value);
+			const str = Serial.stringify(data);
 			this._cache.set(key, str);
 
 			// Store in IndexedDB
