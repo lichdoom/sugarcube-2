@@ -37,7 +37,7 @@ SimpleStore.adapters.push((() => {
 				await this.#loadCache();
 			}
 			catch (ex) {
-				throw ex;
+				console.log(ex);
 			}
 		}
 
