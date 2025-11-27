@@ -74,7 +74,7 @@ SimpleStore.adapters.push((() => {
 				};
 				req.onsuccess = () => {
 					for (const row of req.result) {
-						this.#cache.set(row.id, row.value);
+						this.#cache.set(row.id, row.data);
 					}
 					resolve();
 				};
@@ -103,16 +103,16 @@ SimpleStore.adapters.push((() => {
 				return null;
 			}
 
-			const value = this.#cache.get(key);
-			return value === undefined ? null : Serial.parse(value);
+			const data = this.#cache.get(key);
+			return data === undefined ? null : Serial.parse(data);
 		}
 
-		set(key, value) {
+		set(key, data) {
 			if (typeof key !== 'string' || !key) {
 				return false;
 			}
 
-			const str = Serial.stringify(value);
+			const str = Serial.stringify(data);
 			this.#cache.set(key, str);
 
 			// Store in IndexedDB
