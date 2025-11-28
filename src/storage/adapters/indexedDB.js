@@ -115,16 +115,27 @@ SimpleStore.adapters.push((() => {
 
 			const str = Serial.stringify(data);
 			this._cache.set(key, str);
+			this._store(key, str);
 
+			return true;
+		}
+
+		async backup(key, data) {
+			const str = Serial.stringify(data);
+
+			await this._store(key, str);
+
+			return true;
+		}
+
+		async _store(key, str) {
 			// Store in IndexedDB
 			const store = this._tx();
-			const req = store.put({ id : key, data : str });
+			const req = await store.put({ id : key, data : str });
 
 			req.onerror = () => {
 				console.log(req.error);
 			};
-
-			return true;
 		}
 
 		delete(key) {
