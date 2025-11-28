@@ -253,7 +253,9 @@ jQuery(() => {
 
 			// Save cache to IndexedDB before the page is unloaded
 			document.addEventListener('visibilitychange', async () => {
-				await session.backup();
+				if (document.hidden) {
+					await session.backup();
+				}
 			});
 
 			// Release our loading screen lock after a short delay.
