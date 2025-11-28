@@ -251,6 +251,11 @@ jQuery(() => {
 			// Trigger the `:storyready` global synthetic event.
 			triggerEvent(':storyready');
 
+			// Save cache to IndexedDB before the page is unloaded
+			document.addEventListener('visibilitychange', async () => {
+				await session.backup();
+			});
+
 			// Release our loading screen lock after a short delay.
 			setTimeout(() => LoadScreen.unlock(lockId), Engine.DOM_DELAY * 2);
 

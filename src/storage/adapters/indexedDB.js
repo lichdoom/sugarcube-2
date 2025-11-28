@@ -120,10 +120,8 @@ SimpleStore.adapters.push((() => {
 			return true;
 		}
 
-		async backup(key, data) {
-			const str = Serial.stringify(data);
-
-			await this._store(key, str);
+		async backup(key = 'state') {
+			await this._store(key, this._cache.get(key));
 
 			return true;
 		}
