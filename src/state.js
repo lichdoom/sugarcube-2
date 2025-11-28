@@ -742,7 +742,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 	*******************************************************************************/
 
 	// Save cache to IndexedDB before the page is unloaded
-	window.addEventListener('beforeunload', async () => {
+	document.addEventListener('visibilitychange', async () => {
 		await session.backup('state', stateMarshal());
 	});
 
