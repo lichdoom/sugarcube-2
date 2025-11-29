@@ -251,10 +251,10 @@ jQuery(() => {
 			// Trigger the `:storyready` global synthetic event.
 			triggerEvent(':storyready');
 
-			// Save cache to IndexedDB before the page is unloaded
+			// Ensure IndexedDB saves have completed before the page is unloaded
 			document.addEventListener('visibilitychange', async () => {
 				if (document.hidden) {
-					await session.backup();
+					await Promise.all([session.tx, storage.tx]);
 				}
 			});
 

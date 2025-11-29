@@ -10,6 +10,8 @@ SimpleStore.adapters.push((() => {
 
 	class IndexedDBAdapter {
 		constructor(storageId, persistent) {
+			this.tx = null;
+
 			Object.defineProperties(this, {
 				ready : {
 					value : this._init(`${storageId}_${persistent ? 'Saves' : 'State'}`)
@@ -113,27 +115,24 @@ SimpleStore.adapters.push((() => {
 				return false;
 			}
 
-			const str = Serial.stringify(data);
-			this._cache.set(key, str);
-			this._store(key, str);
+			this.tx = new Promise((resolve, reject) => {
+				const str = Serial.stringify(data);
+				this._cache.set(key, str);
+
+				// Store in IndexedDB
+				const store = this._tx();
+				const req = store.put({ id : key, data : str });
+
+				req.onerror = () => {
+					console.log(req.error);
+					reject(req.error);
+				};
+				req.oncomplete = () => {
+					resolve();
+				};
+			});
 
 			return true;
-		}
-
-		async backup(key = 'state') {
-			await this._store(key, this._cache.get(key));
-
-			return true;
-		}
-
-		async _store(key, str) {
-			// Store in IndexedDB
-			const store = this._tx();
-			const req = await store.put({ id : key, data : str });
-
-			req.onerror = () => {
-				console.log(req.error);
-			};
 		}
 
 		delete(key) {
