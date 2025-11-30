@@ -10,12 +10,9 @@ SimpleStore.adapters.push((() => {
 
 	class IndexedDBAdapter {
 		constructor(storageId, persistent) {
-			this.tx = null;
+			this.ready = this._init(`${storageId}_${persistent ? 'Saves' : 'State'}`);
 
 			Object.defineProperties(this, {
-				ready : {
-					value : this._init(`${storageId}_${persistent ? 'Saves' : 'State'}`)
-				},
 				name : {
 					value : 'IndexedDB'
 				},
@@ -35,6 +32,7 @@ SimpleStore.adapters.push((() => {
 			}
 			catch (ex) {
 				console.log(ex);
+				throw ex;
 			}
 		}
 
@@ -115,21 +113,23 @@ SimpleStore.adapters.push((() => {
 				return false;
 			}
 
-			this.tx = new Promise((resolve, reject) => {
-				const str = Serial.stringify(data);
-				this._cache.set(key, str);
+			const str = Serial.stringify(data);
+			this._cache.set(key, str);
 
-				// Store in IndexedDB
-				const store = this._tx();
-				const req = store.put({ id : key, data : str });
+			// Store in IndexedDB
+			this.ready = this.ready.then(() => {
+				return new Promise((resolve, reject) => {
+					const store = this._tx();
+					const req = store.put({ id : key, data : str });
 
-				req.onerror = () => {
-					console.log(req.error);
-					reject(req.error);
-				};
-				req.oncomplete = () => {
-					resolve();
-				};
+					req.onerror = () => {
+						console.log(req.error);
+						reject(req.error);
+					};
+					req.onsuccess = () => {
+						resolve();
+					};
+				});
 			});
 
 			return true;
@@ -143,12 +143,20 @@ SimpleStore.adapters.push((() => {
 			this._cache.delete(key);
 
 			// Delete key from IndexedDB
-			const store = this._tx();
-			const req = store.delete(key);
+			this.ready = this.ready.then(() => {
+				return new Promise((resolve, reject) => {
+					const store = this._tx();
+					const req = store.delete(key);
 
-			req.onerror = () => {
-				console.log(req.error);
-			};
+					req.onerror = () => {
+						console.log(req.error);
+						reject(req.error);
+					};
+					req.onsuccess = () => {
+						resolve();
+					};
+				});
+			});
 
 			return true;
 		}
@@ -157,12 +165,20 @@ SimpleStore.adapters.push((() => {
 			this._cache.clear();
 
 			// Clear all records from IndexedDB
-			const store = this._tx();
-			const req = store.clear();
+			this.ready = this.ready.then(() => {
+				return new Promise((resolve, reject) => {
+					const store = this._tx();
+					const req = store.clear();
 
-			req.onerror = () => {
-				console.log(req.error);
-			};
+					req.onerror = () => {
+						console.log(req.error);
+						reject(req.error);
+					};
+					req.onsuccess = () => {
+						resolve();
+					};
+				});
+			});
 
 			return true;
 		}

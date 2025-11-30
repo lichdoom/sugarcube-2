@@ -185,12 +185,12 @@ jQuery(() => {
 		try {
 			SugarCube.session = session = SimpleStore.create(Story.id, false); // eslint-disable-line no-undef
 			SugarCube.storage = storage = SimpleStore.create(Story.id, true); // eslint-disable-line no-undef
+			// Wait for the cache to be populated
+			await Promise.all([session.ready, storage.ready]);
 		}
 		catch (ex) {
 			throw new Error(L10n.get('warningNoStorage'));
 		}
-		// Wait for the cache to be populated
-		await Promise.all([session.ready, storage.ready]);
 
 		// Detect a brand-new tab
 		if (!sessionStorage.getItem(Story.id)) {
@@ -254,7 +254,7 @@ jQuery(() => {
 			// Ensure IndexedDB saves have completed before the page is unloaded
 			document.addEventListener('visibilitychange', async () => {
 				if (document.hidden) {
-					await Promise.all([session.tx, storage.tx]);
+					await Promise.all([session.ready, storage.ready]);
 				}
 			});
 
