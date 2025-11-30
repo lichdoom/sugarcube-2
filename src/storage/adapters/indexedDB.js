@@ -117,20 +117,18 @@ SimpleStore.adapters.push((() => {
 			this._cache.set(key, str);
 
 			// Store in IndexedDB
-			this.ready = this.ready.then(() => {
-				return new Promise((resolve, reject) => {
-					const store = this._tx();
-					const req = store.put({ id : key, data : str });
+			this.ready = this.ready.then(() => new Promise((resolve, reject) => {
+				const store = this._tx();
+				const req = store.put({ id : key, data : str });
 
-					req.onerror = () => {
-						console.log(req.error);
-						reject(req.error);
-					};
-					req.onsuccess = () => {
-						resolve();
-					};
-				});
-			});
+				req.onerror = () => {
+					console.log(req.error);
+					reject(req.error);
+				};
+				req.onsuccess = () => {
+					resolve();
+				};
+			}));
 
 			return true;
 		}
@@ -143,20 +141,18 @@ SimpleStore.adapters.push((() => {
 			this._cache.delete(key);
 
 			// Delete key from IndexedDB
-			this.ready = this.ready.then(() => {
-				return new Promise((resolve, reject) => {
-					const store = this._tx();
-					const req = store.delete(key);
+			this.ready = this.ready.then(() => new Promise((resolve, reject) => {
+				const store = this._tx();
+				const req = store.delete(key);
 
-					req.onerror = () => {
-						console.log(req.error);
-						reject(req.error);
-					};
-					req.onsuccess = () => {
-						resolve();
-					};
-				});
-			});
+				req.onerror = () => {
+					console.log(req.error);
+					reject(req.error);
+				};
+				req.onsuccess = () => {
+					resolve();
+				};
+			}));
 
 			return true;
 		}
@@ -165,20 +161,18 @@ SimpleStore.adapters.push((() => {
 			this._cache.clear();
 
 			// Clear all records from IndexedDB
-			this.ready = this.ready.then(() => {
-				return new Promise((resolve, reject) => {
-					const store = this._tx();
-					const req = store.clear();
+			this.ready = this.ready.then(() => new Promise((resolve, reject) => {
+				const store = this._tx();
+				const req = store.clear();
 
-					req.onerror = () => {
-						console.log(req.error);
-						reject(req.error);
-					};
-					req.onsuccess = () => {
-						resolve();
-					};
-				});
-			});
+				req.onerror = () => {
+					console.log(req.error);
+					reject(req.error);
+				};
+				req.onsuccess = () => {
+					resolve();
+				};
+			}));
 
 			return true;
 		}
