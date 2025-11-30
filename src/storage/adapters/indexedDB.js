@@ -100,58 +100,48 @@ SimpleStore.adapters.push((() => {
 		}
 
 		get(key) {
-			if (typeof key !== 'string' || !key) {
-				return null;
-			}
+			if (typeof key !== 'string' || !key) return null;
 
 			const data = this._cache.get(key);
 			return data === undefined ? null : Serial.parse(data);
 		}
 
 		set(key, data) {
-			if (typeof key !== 'string' || !key) {
-				return false;
-			}
+			if (typeof key !== 'string' || !key) return false;
 
 			const str = Serial.stringify(data);
 			this._cache.set(key, str);
 
-			// Store in IndexedDB
-			this.ready = this.ready.then(() => new Promise((resolve, reject) => {
+			// Append Store operation to the queue
+			this.ready = this.ready.then(() => new Promise(resolve => {
 				const store = this._tx();
 				const req = store.put({ id : key, data : str });
 
 				req.onerror = () => {
 					console.log(req.error);
-					reject(req.error);
+					resolve(); // Important! Don't break the Promise chain
 				};
-				req.onsuccess = () => {
-					resolve();
-				};
+				req.onsuccess = () => resolve();
 			}));
 
 			return true;
 		}
 
 		delete(key) {
-			if (typeof key !== 'string' || !key) {
-				return false;
-			}
+			if (typeof key !== 'string' || !key) return false;
 
 			this._cache.delete(key);
 
-			// Delete key from IndexedDB
-			this.ready = this.ready.then(() => new Promise((resolve, reject) => {
+			// Append Delete operation to the queue
+			this.ready = this.ready.then(() => new Promise(resolve => {
 				const store = this._tx();
 				const req = store.delete(key);
 
 				req.onerror = () => {
 					console.log(req.error);
-					reject(req.error);
+					resolve(); // Important! Don't break the Promise chain
 				};
-				req.onsuccess = () => {
-					resolve();
-				};
+				req.onsuccess = () => resolve();
 			}));
 
 			return true;
@@ -160,18 +150,16 @@ SimpleStore.adapters.push((() => {
 		clear() {
 			this._cache.clear();
 
-			// Clear all records from IndexedDB
-			this.ready = this.ready.then(() => new Promise((resolve, reject) => {
+			// Append Clear operation to the queue
+			this.ready = this.ready.then(() => new Promise(resolve => {
 				const store = this._tx();
 				const req = store.clear();
 
 				req.onerror = () => {
 					console.log(req.error);
-					reject(req.error);
+					resolve(); // Important! Don't break the Promise chain
 				};
-				req.onsuccess = () => {
-					resolve();
-				};
+				req.onsuccess = () => resolve();
 			}));
 
 			return true;
