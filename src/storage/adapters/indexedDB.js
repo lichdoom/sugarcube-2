@@ -10,30 +10,17 @@ SimpleStore.adapters.push((() => {
 
 	class IndexedDBAdapter {
 		constructor(storageId, persistent) {
-			this.ready = this._init(`${storageId}_${persistent ? 'Saves' : 'State'}`);
-
 			Object.defineProperties(this, {
-				name : {
-					value : 'IndexedDB'
-				},
-				id : {
-					value : storageId
-				},
-				persistent : {
-					value : Boolean(persistent)
-				}
+				ready      : { value : this._init(`${storageId}_${persistent ? 'Saves' : 'State'}`), writable : true },
+				name       : { value : 'IndexedDB' },
+				id         : { value : storageId },
+				persistent : { value : Boolean(persistent) }
 			});
 		}
 
 		async _init(name) {
-			try {
-				await this._openDB(name);
-				await this._loadCache();
-			}
-			catch (ex) {
-				console.log(ex);
-				throw ex;
-			}
+			await this._openDB(name);
+			await this._loadCache();
 		}
 
 		// Open IndexedDB database
@@ -43,21 +30,15 @@ SimpleStore.adapters.push((() => {
 
 				req.onupgradeneeded = () => {
 					const db = req.result;
-					if (!db.objectStoreNames.contains('sugarcube')) {
-						db.createObjectStore('sugarcube', { keyPath : 'id' });
+					if (!db.objectStoreNames.contains('SugarCube')) {
+						db.createObjectStore('SugarCube', { keyPath : 'id' });
 					}
 				};
-				req.onerror = () => {
-					reject(req.error);
-				};
+				req.onerror = () => reject(req.error);
 				req.onsuccess = () => {
 					Object.defineProperties(this, {
-						_cache : {
-							value : new Map()
-						},
-						_db : {
-							value : req.result
-						}
+						_cache : { value : new Map() },
+						_db    : { value : req.result }
 					});
 					resolve();
 				};
@@ -67,12 +48,9 @@ SimpleStore.adapters.push((() => {
 		// Load data from the database into cache
 		_loadCache() {
 			return new Promise((resolve, reject) => {
-				const store = this._tx('readonly');
-				const req = store.getAll();
+				const req = this._tx('readonly').getAll();
 
-				req.onerror = () => {
-					reject(req.error);
-				};
+				req.onerror = () => reject(req.error);
 				req.onsuccess = () => {
 					for (const row of req.result) {
 						this._cache.set(row.id, row.data);
@@ -83,7 +61,18 @@ SimpleStore.adapters.push((() => {
 		}
 
 		_tx(mode = 'readwrite') {
-			return this._db.transaction('sugarcube', mode).objectStore('sugarcube');
+			return this._db.transaction('SugarCube', mode).objectStore('SugarCube');
+		}
+
+		_enqueue(op) {
+			this.ready = this.ready.then(() => new Promise(resolve => {
+				const req = op();
+				req.onerror = () => {
+					console.log(req.error);
+					resolve(); // Important! Don't break the Promise chain
+				};
+				req.onsuccess = () => resolve();
+			}));
 		}
 
 		// Public methods
@@ -111,18 +100,7 @@ SimpleStore.adapters.push((() => {
 
 			const str = Serial.stringify(data);
 			this._cache.set(key, str);
-
-			// Append Store operation to the queue
-			this.ready = this.ready.then(() => new Promise(resolve => {
-				const store = this._tx();
-				const req = store.put({ id : key, data : str });
-
-				req.onerror = () => {
-					console.log(req.error);
-					resolve(); // Important! Don't break the Promise chain
-				};
-				req.onsuccess = () => resolve();
-			}));
+			this._enqueue(() => this._tx().put({ id : key, data : str }));
 
 			return true;
 		}
@@ -131,36 +109,14 @@ SimpleStore.adapters.push((() => {
 			if (typeof key !== 'string' || !key) return false;
 
 			this._cache.delete(key);
-
-			// Append Delete operation to the queue
-			this.ready = this.ready.then(() => new Promise(resolve => {
-				const store = this._tx();
-				const req = store.delete(key);
-
-				req.onerror = () => {
-					console.log(req.error);
-					resolve(); // Important! Don't break the Promise chain
-				};
-				req.onsuccess = () => resolve();
-			}));
+			this._enqueue(() => this._tx().delete(key));
 
 			return true;
 		}
 
 		clear() {
 			this._cache.clear();
-
-			// Append Clear operation to the queue
-			this.ready = this.ready.then(() => new Promise(resolve => {
-				const store = this._tx();
-				const req = store.clear();
-
-				req.onerror = () => {
-					console.log(req.error);
-					resolve(); // Important! Don't break the Promise chain
-				};
-				req.onsuccess = () => resolve();
-			}));
+			this._enqueue(() => this._tx().clear());
 
 			return true;
 		}
