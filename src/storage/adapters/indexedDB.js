@@ -10,48 +10,92 @@ SimpleStore.adapters.push((() => {
 
 	class IndexedDBAdapter {
 		constructor(storageId, persistent) {
+			this._db      = null;
+			this._opening = null;    // tracks an in-progress open
+			this._name    = `${storageId}_${persistent ? 'Saves' : 'State'}`;
+
 			Object.defineProperties(this, {
-				ready      : { value : this._init(`${storageId}_${persistent ? 'Saves' : 'State'}`), writable : true },
+				ready      : { value : this._init(), writable : true },
 				name       : { value : 'IndexedDB' },
 				id         : { value : storageId },
 				persistent : { value : Boolean(persistent) }
 			});
 		}
 
-		async _init(name) {
-			await this._openDB(name);
+		/* -------------------------------------------------------------
+		* Initialization
+		* ----------------------------------------------------------- */
+		async _init() {
+			await this._openOrReuse();
 			await this._loadCache();
 		}
 
-		// Open IndexedDB database
+		async _openOrReuse() {
+			if (this._db) return;
+			if (this._opening) return this._opening;
+
+			this._opening = this._openDB(this._name)
+				.finally(() => { this._opening = null; });
+
+			return this._opening;
+		}
+
 		_openDB(name) {
 			return new Promise((resolve, reject) => {
 				const req = indexedDB.open(name, 1);
 
 				req.onupgradeneeded = () => {
 					const db = req.result;
-					if (!db.objectStoreNames.contains('SugarCube')) {
-						db.createObjectStore('SugarCube', { keyPath : 'id' });
+					if (!db.objectStoreNames.contains('sugarcube')) {
+						db.createObjectStore('sugarcube', { keyPath : 'id' });
 					}
 				};
 				req.onerror = () => reject(req.error);
 				req.onsuccess = () => {
-					Object.defineProperties(this, {
-						_cache : { value : new Map() },
-						_db    : { value : req.result }
-					});
+					this._db = req.result;
+
+					// IMPORTANT: auto-reopen mechanism
+					this._db.onclose = () => {
+						console.warn("[IndexedDBAdapter] DB connection closed; reconnecting...");
+						this._db = null;
+						this._openOrReuse().catch(err => console.error("Reopen failed:", err));
+					};
+
+					if (!this._cache) {
+						this._cache = new Map();
+					}
+
 					resolve();
 				};
 			});
 		}
 
-		// Load data from the database into cache
-		_loadCache() {
+		/* -------------------------------------------------------------
+		* Ensure DB connection
+		* ----------------------------------------------------------- */
+		async _ensureOpen() {
+			if (this._db) return;
+			await this._openOrReuse();
+		}
+
+		/* -------------------------------------------------------------
+		* Load cache
+		* ----------------------------------------------------------- */
+		async _loadCache() {
+			await this._ensureOpen();
+
 			return new Promise((resolve, reject) => {
-				const req = this._tx('readonly').getAll();
+				let req;
+				try {
+					req = this._safeTx('readonly').getAll();
+				} catch (err) {
+					this._db = null;
+					return this._loadCache().then(resolve).catch(reject);
+				}
 
 				req.onerror = () => reject(req.error);
 				req.onsuccess = () => {
+					this._cache.clear();
 					for (const row of req.result) {
 						this._cache.set(row.id, row.data);
 					}
@@ -60,22 +104,58 @@ SimpleStore.adapters.push((() => {
 			});
 		}
 
-		_tx(mode = 'readwrite') {
-			return this._db.transaction('SugarCube', mode).objectStore('SugarCube');
+		/* -------------------------------------------------------------
+		* Safe transaction creator with retry
+		* ----------------------------------------------------------- */
+		async _safeTx(mode = 'readwrite') {
+			await this._ensureOpen();
+
+			try {
+				return this._db.transaction('sugarcube', mode).objectStore('sugarcube');
+			} catch (err) {
+				// If db is closed or invalid, reopen and retry once
+				if (err.name === "InvalidStateError") {
+					this._db = null;
+					await this._ensureOpen();
+					return this._db.transaction('sugarcube', mode).objectStore('sugarcube');
+				}
+				throw err;
+			}
 		}
 
+		/* -------------------------------------------------------------
+		* Enqueue with safety + retry
+		* ----------------------------------------------------------- */
 		_enqueue(op) {
-			this.ready = this.ready.then(() => new Promise(resolve => {
-				const req = op();
-				req.onerror = () => {
-					console.log(req.error);
-					resolve(); // Important! Don't break the Promise chain
-				};
-				req.onsuccess = () => resolve();
-			}));
+			this.ready = this.ready.then(async () => {
+				let tx = await this._safeTx();
+
+				return new Promise(resolve => {
+					const req = op(tx);
+
+					req.onerror = async () => {
+						// Retry once if DB closed during operation
+						if (req.error?.name === "InvalidStateError") {
+							console.warn("[IndexedDBAdapter] Retry after InvalidStateError");
+							this._db = null;
+							tx = await this._safeTx();
+							const req2 = op(tx);
+							req2.onerror = () => resolve();
+							req2.onsuccess = () => resolve();
+							return;
+						}
+
+						console.warn(req.error);
+						resolve();
+					};
+					req.onsuccess = () => resolve();
+				});
+			});
 		}
 
-		// Public methods
+		/* -------------------------------------------------------------
+		* Public API
+		* ----------------------------------------------------------- */
 		get size() {
 			return this._cache.size;
 		}
@@ -100,7 +180,7 @@ SimpleStore.adapters.push((() => {
 
 			const str = Serial.stringify(data);
 			this._cache.set(key, str);
-			this._enqueue(() => this._tx().put({ id : key, data : str }));
+			this._enqueue(tx => tx.put({ id : key, data : str }));
 
 			return true;
 		}
@@ -109,14 +189,14 @@ SimpleStore.adapters.push((() => {
 			if (typeof key !== 'string' || !key) return false;
 
 			this._cache.delete(key);
-			this._enqueue(() => this._tx().delete(key));
+			this._enqueue(tx => tx().delete(key));
 
 			return true;
 		}
 
 		clear() {
 			this._cache.clear();
-			this._enqueue(() => this._tx().clear());
+			this._enqueue(tx => tx().clear());
 
 			return true;
 		}
