@@ -152,8 +152,7 @@ SimpleStore.adapters.push((() => {
 					};
 
 					req.onerror = async () => {
-						if (req.error?.name === 'InvalidStateError' ||
-							req.error?.name === 'TransactionInactiveError') {
+						if (req.error?.name === 'InvalidStateError' || req.error?.name === 'TransactionInactiveError') {
 							console.warn('[IndexedDBAdapter] Retrying after DB invalidation.');
 							this._db = null;
 
