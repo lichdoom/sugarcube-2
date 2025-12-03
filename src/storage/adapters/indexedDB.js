@@ -11,7 +11,8 @@ SimpleStore.adapters.push((() => {
 	class IndexedDBAdapter {
 		constructor(storageId, persistent) {
 			this._db      = null;
-			this._opening = null;    // tracks an in-progress open
+			this._opening = null;
+			this._cache   = new Map();
 			this._name    = `${storageId}_${persistent ? 'Saves' : 'State'}`;
 
 			Object.defineProperties(this, {
@@ -30,6 +31,7 @@ SimpleStore.adapters.push((() => {
 			await this._loadCache();
 		}
 
+		// eslint-disable-next-line require-await
 		async _openOrReuse() {
 			if (this._db) return;
 			if (this._opening) return this._opening;
@@ -54,16 +56,12 @@ SimpleStore.adapters.push((() => {
 				req.onsuccess = () => {
 					this._db = req.result;
 
-					// IMPORTANT: auto-reopen mechanism
+					// Auto-reopen when browser kills the DB connection
 					this._db.onclose = () => {
-						console.warn("[IndexedDBAdapter] DB connection closed; reconnecting...");
+						console.warn('[IndexedDBAdapter] DB connection closed; reconnecting...');
 						this._db = null;
-						this._openOrReuse().catch(err => console.error("Reopen failed:", err));
+						this._openOrReuse().catch(err => console.error('Reopen failed:', err));
 					};
-
-					if (!this._cache) {
-						this._cache = new Map();
-					}
 
 					resolve();
 				};
@@ -84,24 +82,25 @@ SimpleStore.adapters.push((() => {
 		async _loadCache() {
 			await this._ensureOpen();
 
-			return new Promise((resolve, reject) => {
-				let req;
-				try {
-					req = this._safeTx('readonly').getAll();
-				} catch (err) {
-					this._db = null;
-					return this._loadCache().then(resolve).catch(reject);
-				}
+			try {
+				return new Promise((resolve, reject) => {
+					const req = this._db.transaction('sugarcube', 'readonly').objectStore('sugarcube');
 
-				req.onerror = () => reject(req.error);
-				req.onsuccess = () => {
-					this._cache.clear();
-					for (const row of req.result) {
-						this._cache.set(row.id, row.data);
-					}
-					resolve();
-				};
-			});
+					req.onerror = () => reject(req.error);
+					req.onsuccess = () => {
+						this._cache.clear();
+						for (const row of req.result) {
+							this._cache.set(row.id, row.data);
+						}
+						resolve();
+					};
+				});
+			}
+			catch (err) {
+				// If db was closed during startup, retry once
+				this._db = null;
+				return this._loadCache();
+			}
 		}
 
 		/* -------------------------------------------------------------
@@ -112,9 +111,10 @@ SimpleStore.adapters.push((() => {
 
 			try {
 				return this._db.transaction('sugarcube', mode).objectStore('sugarcube');
-			} catch (err) {
+			}
+			catch (err) {
 				// If db is closed or invalid, reopen and retry once
-				if (err.name === "InvalidStateError") {
+				if (err.name === 'InvalidStateError') {
 					this._db = null;
 					await this._ensureOpen();
 					return this._db.transaction('sugarcube', mode).objectStore('sugarcube');
@@ -124,7 +124,7 @@ SimpleStore.adapters.push((() => {
 		}
 
 		/* -------------------------------------------------------------
-		* Enqueue with safety + retry
+		* Queue operations safely
 		* ----------------------------------------------------------- */
 		_enqueue(op) {
 			this.ready = this.ready.then(async () => {
@@ -135,8 +135,8 @@ SimpleStore.adapters.push((() => {
 
 					req.onerror = async () => {
 						// Retry once if DB closed during operation
-						if (req.error?.name === "InvalidStateError") {
-							console.warn("[IndexedDBAdapter] Retry after InvalidStateError");
+						if (req.error?.name === 'InvalidStateError') {
+							console.warn('[IndexedDBAdapter] Retry after InvalidStateError');
 							this._db = null;
 							tx = await this._safeTx();
 							const req2 = op(tx);
@@ -189,14 +189,14 @@ SimpleStore.adapters.push((() => {
 			if (typeof key !== 'string' || !key) return false;
 
 			this._cache.delete(key);
-			this._enqueue(tx => tx().delete(key));
+			this._enqueue(tx => tx.delete(key));
 
 			return true;
 		}
 
 		clear() {
 			this._cache.clear();
-			this._enqueue(tx => tx().clear());
+			this._enqueue(tx => tx.clear());
 
 			return true;
 		}
