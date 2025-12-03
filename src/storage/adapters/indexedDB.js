@@ -54,19 +54,22 @@ SimpleStore.adapters.push((() => {
 				};
 				req.onerror = () => reject(req.error);
 				req.onblocked = () => {
-					console.warn('[IndexedDBAdapter] Open request blocked — another tab needs to close.');
+					console.warn('[IndexedDBAdapter] Open request blocked — another tab must be closed.');
 				};
 				req.onsuccess = () => {
-					this._db = req.result;
+					const db = req.result;
+					this._db = db;
 
-					// Auto-reopen when browser kills the DB connection
-					this._db.onclose = () => {
-						console.warn('[IndexedDBAdapter] DB connection closed; reconnecting...');
+					/* Auto-reopen if DB connection is killed */
+					db.onclose = () => {
+						console.warn('[IndexedDBAdapter] DB connection closed — attempting reopen.');
 						this._db = null;
 						this._openOrReuse().catch(err => console.error('Reopen failed:', err));
 					};
-					this._db.onversionchange = () => {
-						this._db.close();
+					/* Multi-tab upgrade handling */
+					db.onversionchange = () => {
+						console.warn('[IndexedDBAdapter] Version change detected — closing DB.');
+						db.close();
 						this._db = null;
 					};
 
@@ -90,7 +93,12 @@ SimpleStore.adapters.push((() => {
 			await this._ensureOpen();
 
 			return new Promise((resolve, reject) => {
-				const req = this._db.transaction('sugarcube', 'readonly').objectStore('sugarcube').getAll();
+				const tx = this._db.transaction('sugarcube', 'readonly');
+				const req = tx.objectStore('sugarcube').getAll();
+
+				/* Important: catch transaction-level abort */
+				tx.onabort = () => reject(tx.error);
+				tx.onerror = () => reject(tx.error);
 
 				req.onerror = () => reject(req.error);
 				req.onsuccess = () => {
@@ -104,7 +112,7 @@ SimpleStore.adapters.push((() => {
 		}
 
 		/* -------------------------------------------------------------
-		* Safe transaction creator with retry
+		* Safe transaction (retry on close or inactive)
 		* ----------------------------------------------------------- */
 		async _safeTx(mode = 'readwrite') {
 			await this._ensureOpen();
@@ -113,8 +121,7 @@ SimpleStore.adapters.push((() => {
 				return this._db.transaction('sugarcube', mode).objectStore('sugarcube');
 			}
 			catch (err) {
-				// If db is closed or invalid, reopen and retry once
-				if (err.name === 'InvalidStateError') {
+				if (err.name === 'InvalidStateError' || err.name === 'TransactionInactiveError') {
 					this._db = null;
 					await this._ensureOpen();
 					return this._db.transaction('sugarcube', mode).objectStore('sugarcube');
@@ -128,24 +135,44 @@ SimpleStore.adapters.push((() => {
 		* ----------------------------------------------------------- */
 		_enqueue(op) {
 			this.ready = this.ready.then(async () => {
-				let tx = await this._safeTx();
+				let store = await this._safeTx();
 
 				return new Promise(resolve => {
-					const req = op(tx);
+					const tx = store.transaction;
+					const req = op(store);
+
+					/* Transaction-level safety (Safari/iOS) */
+					tx.onabort = () => {
+						console.warn('[IndexedDBAdapter] Transaction aborted:', tx.error);
+						resolve();
+					};
+					tx.onerror = () => {
+						console.warn('[IndexedDBAdapter] Transaction error:', tx.error);
+						resolve();
+					};
 
 					req.onerror = async () => {
-						// Retry once if DB closed during operation
-						if (req.error?.name === 'InvalidStateError') {
-							console.warn('[IndexedDBAdapter] Retry after InvalidStateError');
+						if (req.error?.name === 'InvalidStateError' ||
+							req.error?.name === 'TransactionInactiveError') {
+							console.warn('[IndexedDBAdapter] Retrying after DB invalidation.');
 							this._db = null;
-							tx = await this._safeTx();
-							const req2 = op(tx);
-							req2.onerror = () => resolve();
+
+							store = await this._safeTx();
+							const tx2 = store.transaction;
+							const req2 = op(store);
+
+							tx2.onabort = () => resolve();
+							tx2.onerror = () => resolve();
+
+							req2.onerror = () => {
+								console.error('[IndexedDBAdapter] Retry failed:', req2.error);
+								resolve();
+							};
 							req2.onsuccess = () => resolve();
 							return;
 						}
 
-						console.warn(req.error);
+						console.warn('[IndexedDBAdapter] IndexedDB request error:', req.error);
 						resolve();
 					};
 					req.onsuccess = () => resolve();
@@ -180,7 +207,7 @@ SimpleStore.adapters.push((() => {
 
 			const str = Serial.stringify(data);
 			this._cache.set(key, str);
-			this._enqueue(tx => tx.put({ id : key, data : str }));
+			this._enqueue(store => store.put({ id : key, data : str }));
 
 			return true;
 		}
@@ -189,14 +216,14 @@ SimpleStore.adapters.push((() => {
 			if (typeof key !== 'string' || !key) return false;
 
 			this._cache.delete(key);
-			this._enqueue(tx => tx.delete(key));
+			this._enqueue(store => store.delete(key));
 
 			return true;
 		}
 
 		clear() {
 			this._cache.clear();
-			this._enqueue(tx => tx.clear());
+			this._enqueue(store => store.clear());
 
 			return true;
 		}
