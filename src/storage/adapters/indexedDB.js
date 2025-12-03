@@ -53,6 +53,9 @@ SimpleStore.adapters.push((() => {
 					}
 				};
 				req.onerror = () => reject(req.error);
+				req.onblocked = () => {
+					console.warn('[IndexedDBAdapter] Open request blocked — another tab needs to close.');
+				};
 				req.onsuccess = () => {
 					this._db = req.result;
 
@@ -61,6 +64,10 @@ SimpleStore.adapters.push((() => {
 						console.warn('[IndexedDBAdapter] DB connection closed; reconnecting...');
 						this._db = null;
 						this._openOrReuse().catch(err => console.error('Reopen failed:', err));
+					};
+					this._db.onversionchange = () => {
+						this._db.close();
+						this._db = null;
 					};
 
 					resolve();
@@ -82,25 +89,18 @@ SimpleStore.adapters.push((() => {
 		async _loadCache() {
 			await this._ensureOpen();
 
-			try {
-				return new Promise((resolve, reject) => {
-					const req = this._db.transaction('sugarcube', 'readonly').objectStore('sugarcube');
+			return new Promise((resolve, reject) => {
+				const req = this._db.transaction('sugarcube', 'readonly').objectStore('sugarcube').getAll();
 
-					req.onerror = () => reject(req.error);
-					req.onsuccess = () => {
-						this._cache.clear();
-						for (const row of req.result) {
-							this._cache.set(row.id, row.data);
-						}
-						resolve();
-					};
-				});
-			}
-			catch (err) {
-				// If db was closed during startup, retry once
-				this._db = null;
-				return this._loadCache();
-			}
+				req.onerror = () => reject(req.error);
+				req.onsuccess = () => {
+					this._cache.clear();
+					for (const row of req.result) {
+						this._cache.set(row.id, row.data);
+					}
+					resolve();
+				};
+			});
 		}
 
 		/* -------------------------------------------------------------
