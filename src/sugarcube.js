@@ -172,9 +172,7 @@ jQuery(() => {
 	LoadScreen.init();
 
 	// Normalize the document.
-	if (document.normalize) {
-		document.normalize();
-	}
+	document?.normalize?.()
 
 	// From this point on it's promises all the way down.
 	new Promise(async resolve => {
@@ -187,15 +185,15 @@ jQuery(() => {
 			SugarCube.storage = storage = SimpleStore.create(Story.id, true); // eslint-disable-line no-undef
 			// Wait for the cache to be populated
 			await Promise.all([session.ready, storage.ready]);
+			// Ensure IndexedDB saves have completed before the page is unloaded
+			document.addEventListener('visibilitychange', async () => {
+				document.hidden && await Promise.all([session.ready, storage.ready]).catch(err => {
+					console.error('DB save error on visibilitychange:', err);
+				});
+			});
 		}
 		catch (ex) {
 			throw new Error(L10n.get('warningNoStorage'));
-		}
-
-		// Detect a brand-new tab
-		if (!sessionStorage.getItem(Story.id)) {
-			sessionStorage.setItem(Story.id, true);
-			session.clear();
 		}
 
 		// Initialize the user interfaces.
@@ -224,6 +222,12 @@ jQuery(() => {
 		// Initialize the debug bar interface.
 		DebugBar.init();
 
+		// Clear session DB on brand-new tab
+		if (Config.clearSession && !sessionStorage.getItem(Story.id)) {
+			sessionStorage.setItem(Story.id, true);
+			session.clear();
+		}
+
 		// Schedule the start of the engine and interfaces once both the DOM is
 		// reporting non-empty dimensions for the viewport and our loading screen
 		// lock is the only remaining one.
@@ -250,13 +254,6 @@ jQuery(() => {
 
 			// Trigger the `:storyready` global synthetic event.
 			triggerEvent(':storyready');
-
-			// Ensure IndexedDB saves have completed before the page is unloaded
-			document.addEventListener('visibilitychange', async () => {
-				if (document.hidden) {
-					await Promise.all([session.ready, storage.ready]);
-				}
-			});
 
 			// Release our loading screen lock after a short delay.
 			setTimeout(() => LoadScreen.unlock(lockId), Engine.DOM_DELAY * 2);
