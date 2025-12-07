@@ -233,12 +233,11 @@ SimpleStore.adapters.push((() => {
 			return true;
 		}
 
-		save() {
-			sessionStorage.setItem('state', session._cache.get('state'));
-			/* this.set('state', session.get('state'));
+		async save() {
+			this.set('state', session.get('state'));
 			await this.ready.catch(err => {
 				console.error('DB save error:', err);
-			}); */
+			});
 		}
 	}
 

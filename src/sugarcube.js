@@ -227,14 +227,12 @@ jQuery(() => {
 
 		// Set session DB on reload
 		if (sessionStorage.getItem(Story.id)) {
-			session.set('state', Serial.parse(sessionStorage.getItem('state')));
-			// session.set('state', storage.get('state'));
+			session.set('state', storage.get('state'));
 		}
 		else {
 			sessionStorage.setItem(Story.id, true);
 			if (!Config.clearSession) {
-				session.set('state', Serial.parse(sessionStorage.getItem('state')));
-				// session.set('state', storage.get('state'));
+				session.set('state', storage.get('state'));
 			}
 		}
 
