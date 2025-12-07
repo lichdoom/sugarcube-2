@@ -239,6 +239,11 @@ SimpleStore.adapters.push((() => {
 				console.error('DB save error:', err);
 			});
 		}
+
+		restore() {
+			session._cache.set('state', this._cache.get('state'));
+			this.delete('state');
+		}
 	}
 
 	/*******************************************************************************
