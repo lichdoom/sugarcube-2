@@ -1,4 +1,4 @@
-/* global Serial, SimpleStore */
+/* global Serial, session, SimpleStore */
 
 SimpleStore.adapters.push((() => {
 	// Adapter readiness state.
@@ -10,23 +10,22 @@ SimpleStore.adapters.push((() => {
 
 	class IndexedDBAdapter {
 		constructor(storageId, persistent) {
-			this._db      = null;
-			this._opening = null;
-			this._cache   = new Map();
-			this._name    = `${storageId}_${persistent ? 'Saves' : 'State'}`;
-
 			Object.defineProperties(this, {
-				ready      : { value : this._init(), writable : true },
+				_cache     : { value : new Map() },
 				name       : { value : 'IndexedDB' },
 				id         : { value : storageId },
 				persistent : { value : Boolean(persistent) }
 			});
+
+			this.ready = this.persistent ? this._init() : Promise.resolve();
 		}
 
 		/* -------------------------------------------------------------
 		* Initialization
 		* ----------------------------------------------------------- */
 		async _init() {
+			this._db      = null;
+			this._opening = null;
 			await this._openOrReuse();
 			await this._loadCache();
 		}
@@ -36,7 +35,7 @@ SimpleStore.adapters.push((() => {
 			if (this._db) return;
 			if (this._opening) return this._opening;
 
-			this._opening = this._openDB(this._name)
+			this._opening = this._openDB(this.id)
 				.finally(() => { this._opening = null; });
 
 			return this._opening;
@@ -48,8 +47,8 @@ SimpleStore.adapters.push((() => {
 
 				req.onupgradeneeded = () => {
 					const db = req.result;
-					if (!db.objectStoreNames.contains('sugarcube')) {
-						db.createObjectStore('sugarcube', { keyPath : 'id' });
+					if (!db.objectStoreNames.contains('SugarCube')) {
+						db.createObjectStore('SugarCube', { keyPath : 'id' });
 					}
 				};
 				req.onerror = () => reject(req.error);
@@ -93,8 +92,8 @@ SimpleStore.adapters.push((() => {
 			await this._ensureOpen();
 
 			return new Promise((resolve, reject) => {
-				const tx = this._db.transaction('sugarcube', 'readonly');
-				const req = tx.objectStore('sugarcube').getAll();
+				const tx = this._db.transaction('SugarCube', 'readonly');
+				const req = tx.objectStore('SugarCube').getAll();
 
 				/* Important: catch transaction-level abort */
 				tx.onabort = () => reject(tx.error);
@@ -118,13 +117,13 @@ SimpleStore.adapters.push((() => {
 			await this._ensureOpen();
 
 			try {
-				return this._db.transaction('sugarcube', mode).objectStore('sugarcube');
+				return this._db.transaction('SugarCube', mode).objectStore('SugarCube');
 			}
 			catch (err) {
 				if (err.name === 'InvalidStateError' || err.name === 'TransactionInactiveError') {
 					this._db = null;
 					await this._ensureOpen();
-					return this._db.transaction('sugarcube', mode).objectStore('sugarcube');
+					return this._db.transaction('SugarCube', mode).objectStore('SugarCube');
 				}
 				throw err;
 			}
@@ -205,7 +204,10 @@ SimpleStore.adapters.push((() => {
 			if (typeof key !== 'string' || !key) return false;
 
 			const str = Serial.stringify(data);
+			if (str === this._cache.get(key)) return true;
 			this._cache.set(key, str);
+
+			if (!this.persistent) return true;
 			this._enqueue(store => store.put({ id : key, data : str }));
 
 			return true;
@@ -215,6 +217,8 @@ SimpleStore.adapters.push((() => {
 			if (typeof key !== 'string' || !key) return false;
 
 			this._cache.delete(key);
+
+			if (!this.persistent) return true;
 			this._enqueue(store => store.delete(key));
 
 			return true;
@@ -222,9 +226,19 @@ SimpleStore.adapters.push((() => {
 
 		clear() {
 			this._cache.clear();
+
+			if (!this.persistent) return true;
 			this._enqueue(store => store.clear());
 
 			return true;
+		}
+
+		save() {
+			sessionStorage.setItem('state', session._cache.get('state'));
+			/* this.set('state', session.get('state'));
+			await this.ready.catch(err => {
+				console.error('DB save error:', err);
+			}); */
 		}
 	}
 

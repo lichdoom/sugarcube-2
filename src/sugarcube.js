@@ -172,7 +172,7 @@ jQuery(() => {
 	LoadScreen.init();
 
 	// Normalize the document.
-	document?.normalize?.()
+	document?.normalize?.();
 
 	// From this point on it's promises all the way down.
 	new Promise(async resolve => {
@@ -184,12 +184,15 @@ jQuery(() => {
 			SugarCube.session = session = SimpleStore.create(Story.id, false); // eslint-disable-line no-undef
 			SugarCube.storage = storage = SimpleStore.create(Story.id, true); // eslint-disable-line no-undef
 			// Wait for the cache to be populated
-			await Promise.all([session.ready, storage.ready]);
+			await storage.ready;
 			// Ensure IndexedDB saves have completed before the page is unloaded
 			document.addEventListener('visibilitychange', async () => {
-				document.hidden && await Promise.all([session.ready, storage.ready]).catch(err => {
-					console.error('DB save error on visibilitychange:', err);
-				});
+				if (document.hidden) {
+					await storage.save();
+				}
+			});
+			window.addEventListener('beforeunload', async () => {
+				await storage.save();
 			});
 		}
 		catch (ex) {
@@ -222,10 +225,17 @@ jQuery(() => {
 		// Initialize the debug bar interface.
 		DebugBar.init();
 
-		// Clear session DB on brand-new tab
-		if (Config.clearSession && !sessionStorage.getItem(Story.id)) {
+		// Set session DB on reload
+		if (sessionStorage.getItem(Story.id)) {
+			session.set('state', Serial.parse(sessionStorage.getItem('state')));
+			// session.set('state', storage.get('state'));
+		}
+		else {
 			sessionStorage.setItem(Story.id, true);
-			session.clear();
+			if (!Config.clearSession) {
+				session.set('state', Serial.parse(sessionStorage.getItem('state')));
+				// session.set('state', storage.get('state'));
+			}
 		}
 
 		// Schedule the start of the engine and interfaces once both the DOM is
