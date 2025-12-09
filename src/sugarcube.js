@@ -172,7 +172,7 @@ jQuery(() => {
 	LoadScreen.init();
 
 	// Normalize the document.
-	document?.normalize?.();
+	document.normalize?.();
 
 	// From this point on it's promises all the way down.
 	new Promise(async resolve => {
@@ -186,14 +186,14 @@ jQuery(() => {
 			// Wait for the cache to be populated
 			await storage.ready;
 			// Ensure IndexedDB saves have completed before the page is unloaded
-			document.addEventListener('visibilitychange', async () => {
+			document.addEventListener('visibilitychange', () => {
 				if (document.hidden) {
-					await storage.save();
+					// await storage.save();
 				}
 			});
-			window.addEventListener('beforeunload', async () => {
+			/* window.addEventListener('beforeunload', async () => {
 				await storage.save();
-			});
+			}); */
 		}
 		catch (ex) {
 			throw new Error(L10n.get('warningNoStorage'));

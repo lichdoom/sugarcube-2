@@ -17,6 +17,7 @@ SimpleStore.adapters.push((() => {
 				persistent : { value : Boolean(persistent) }
 			});
 
+			this.changed = false;
 			this.ready = this.persistent ? this._init() : Promise.resolve();
 		}
 
@@ -204,8 +205,8 @@ SimpleStore.adapters.push((() => {
 			if (typeof key !== 'string' || !key) return false;
 
 			const str = Serial.stringify(data);
-			if (str === this._cache.get(key)) return true;
 			this._cache.set(key, str);
+			this.changed = true;
 
 			if (!this.persistent) return true;
 			this._enqueue(store => store.put({ id : key, data : str }));
@@ -234,6 +235,8 @@ SimpleStore.adapters.push((() => {
 		}
 
 		async save() {
+			if (!this.changed) return;
+			this.changed = false;
 			this.set('state', session.get('state'));
 			await this.ready.catch(err => {
 				console.error('DB save error:', err);
@@ -260,7 +263,7 @@ SimpleStore.adapters.push((() => {
 
 	function init() {
 		// IndexedDB feature test.
-		_ok = 'indexedDB' in window;
+		_ok = 'indexedDB' in window && 'serviceWorker' in navigator;
 
 		return _ok;
 	}
