@@ -1,4 +1,4 @@
-/* global Serial, session, SimpleStore */
+/* global Serial, SimpleStore, exceptionFrom */
 
 SimpleStore.adapters.push((() => {
 	// Adapter readiness state.
@@ -11,21 +11,31 @@ SimpleStore.adapters.push((() => {
 	class IndexedDBAdapter {
 		constructor(storageId, persistent) {
 			Object.defineProperties(this, {
-				_cache     : { value : new Map() },
+				_prefix	   : { value : `${storageId}.` },
 				name       : { value : 'IndexedDB' },
 				id         : { value : storageId },
 				persistent : { value : Boolean(persistent) }
 			});
 
-			this.changed = false;
-			this.ready = this.persistent ? this._init() : Promise.resolve();
+			this._db     = null;
+			this.changed = true;
+			this.ready   = this.persistent ? this._init() : null;
+
+			if (!persistent) {
+				this._db = window.sessionStorage;
+				for (const key of this.keys()) {
+					if (!key.startsWith(this._prefix)) {
+						this._db.removeItem(key);
+					}
+				}
+			}
 		}
 
 		/* -------------------------------------------------------------
 		* Initialization
 		* ----------------------------------------------------------- */
 		async _init() {
-			this._db      = null;
+			this._cache   = new Map();
 			this._opening = null;
 			await this._openOrReuse();
 			await this._loadCache();
@@ -183,21 +193,35 @@ SimpleStore.adapters.push((() => {
 		* Public API
 		* ----------------------------------------------------------- */
 		get size() {
-			return this._cache.size;
+			return this.persistent ? this._cache.size : this.keys().length;
 		}
 
 		keys() {
-			return [...this._cache.keys()];
+			if (this.persistent) return [...this._cache.keys()];
+
+			const keys = [];
+			for (let i = 0; i < this._db.length; ++i) {
+				const key = this._db.key(i);
+
+				if (key.startsWith(this._prefix)) {
+					keys.push(key.replace(this._prefix, ''));
+				}
+			}
+			return keys;
 		}
 
 		has(key) {
-			return typeof key === 'string' && this._cache.has(key);
+			if (typeof key !== 'string' || !key) return false;
+
+			if (this.persistent) return this._cache.has(key);
+			return Object.hasOwn(this._db, this._prefix + key);
 		}
 
 		get(key) {
 			if (typeof key !== 'string' || !key) return null;
 
-			const data = this._cache.get(key);
+			// eslint-disable-next-line max-len
+			const data = this.persistent ? this._cache.get(key) : this._db.getItem(this._prefix + key);
 			return data === undefined ? null : Serial.parse(data);
 		}
 
@@ -205,11 +229,35 @@ SimpleStore.adapters.push((() => {
 			if (typeof key !== 'string' || !key) return false;
 
 			const str = Serial.stringify(data);
-			this._cache.set(key, str);
-			this.changed = true;
 
-			if (!this.persistent) return true;
-			this._enqueue(store => store.put({ id : key, data : str }));
+			if (this.persistent) {
+				this._cache.set(key, str);
+
+				if (!this.persistent) return true;
+				this._enqueue(store => store.put({ id : key, data : str }));
+			}
+			else {
+				try {
+					if (this.changed) {
+						this.changed = false;
+						this._db.setItem(this._prefix + key, str);
+					}
+				}
+				catch (ex) {
+					// If the exception is a quota exceeded error, massage it into something
+					// a bit nicer for the player.
+					if (isQuotaDOMException(ex)) {
+						throw exceptionFrom(ex, Error, {
+							cause   : { origin : ex },
+							message : `${this.name} quota exceeded`
+						});
+					}
+
+					// Elsewise, simply rethrow the exception.
+					throw ex;
+				}
+			}
+
 
 			return true;
 		}
@@ -217,35 +265,27 @@ SimpleStore.adapters.push((() => {
 		delete(key) {
 			if (typeof key !== 'string' || !key) return false;
 
-			this._cache.delete(key);
-
-			if (!this.persistent) return true;
-			this._enqueue(store => store.delete(key));
+			if (this.persistent) {
+				this._cache.delete(key);
+				this._enqueue(store => store.delete(key));
+			}
+			else {
+				this._db.removeItem(this._prefix + key);
+			}
 
 			return true;
 		}
 
 		clear() {
-			this._cache.clear();
-
-			if (!this.persistent) return true;
-			this._enqueue(store => store.clear());
+			if (this.persistent) {
+				this._cache.clear();
+				this._enqueue(store => store.clear());
+			}
+			else {
+				this._db.clear();
+			}
 
 			return true;
-		}
-
-		async save() {
-			if (!this.changed) return;
-			this.changed = false;
-			this.set('state', session.get('state'));
-			await this.ready.catch(err => {
-				console.error('DB save error:', err);
-			});
-		}
-
-		restore() {
-			session._cache.set('state', this._cache.get('state'));
-			this.delete('state');
 		}
 	}
 
@@ -262,10 +302,48 @@ SimpleStore.adapters.push((() => {
 	}
 
 	function init() {
+		// Web Storage feature test.
+		function hasWebStorage(storeId) {
+			let store;
+
+			try {
+				store = window[storeId];
+				const val = `_sc_${String(Date.now())}`;
+				store.setItem(val, val);
+				const result = store.getItem(val) === val;
+				store.removeItem(val);
+				return result;
+			}
+			catch (ex) {
+				// Attempt to ensure that the exception was due to feature failure rather
+				// than simply a quota error, which is possible due to browser stupidity.
+				return store && store.length !== 0 && isQuotaDOMException(ex);
+			}
+		}
 		// IndexedDB feature test.
-		_ok = 'indexedDB' in window && 'serviceWorker' in navigator;
+		_ok = 'indexedDB' in window && hasWebStorage('sessionStorage');
 
 		return _ok;
+	}
+
+	const isQuotaErrorRE = /quota.?(?:exceeded|reached)/i;
+
+	function isQuotaDOMException(ex) {
+		return ex instanceof DOMException
+			&& (
+				// The `.code` property is non-standard and not supported by all browsers,
+				// but for legacy support test it first anyway.
+				//
+				// Legacy codes: `22` (non-Firefox) and `1014` (Firefox).
+				ex.code === 22 || ex.code === 1014
+
+				// If the `.code` test failed, resort to pattern matching the `.name` and
+				// `.message` properties—the latter being required only by Opera (Presto).
+				//
+				// NOTE: The current standards compliant name is `"QuotaExceededError"`.
+				// Legacy names: `"QUOTA_EXCEEDED_ERR"` (non-Firefox) and `"NS_ERROR_DOM_QUOTA_REACHED"` (Firefox).
+				|| isQuotaErrorRE.test(ex.name) || isQuotaErrorRE.test(ex.message)
+			);
 	}
 
 	/*******************************************************************************

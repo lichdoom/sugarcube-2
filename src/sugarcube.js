@@ -185,19 +185,13 @@ jQuery(() => {
 			SugarCube.storage = storage = SimpleStore.create(Story.id, true); // eslint-disable-line no-undef
 			// Wait for the cache to be populated
 			await storage.ready;
-			// Ensure IndexedDB saves have completed before the page is unloaded
-			document.addEventListener('visibilitychange', () => {
-				if (document.hidden) {
-					// await storage.save();
-				}
-			});
-			/* window.addEventListener('beforeunload', async () => {
-				await storage.save();
-			}); */
 		}
 		catch (ex) {
 			throw new Error(L10n.get('warningNoStorage'));
 		}
+
+		// Initialize the story state.
+		State.init();
 
 		// Initialize the user interfaces.
 		//
@@ -224,17 +218,6 @@ jQuery(() => {
 
 		// Initialize the debug bar interface.
 		DebugBar.init();
-
-		// Set session DB on reload
-		if (sessionStorage.getItem(Story.id)) {
-			storage.restore();
-		}
-		else {
-			sessionStorage.setItem(Story.id, true);
-			if (!Config.clearSession) {
-				storage.restore();
-			}
-		}
 
 		// Schedule the start of the engine and interfaces once both the DOM is
 		// reporting non-empty dimensions for the viewport and our loading screen
