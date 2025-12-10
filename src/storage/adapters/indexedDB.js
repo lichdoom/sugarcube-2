@@ -11,7 +11,8 @@ SimpleStore.adapters.push((() => {
 	class IndexedDBAdapter {
 		constructor(storageId, persistent) {
 			Object.defineProperties(this, {
-				_prefix	   : { value : `${storageId}.` },
+				_cache     : { value : new Map() },
+				_prefix    : { value : `${storageId}.` },
 				name       : { value : 'IndexedDB' },
 				id         : { value : storageId },
 				persistent : { value : Boolean(persistent) }
@@ -25,6 +26,7 @@ SimpleStore.adapters.push((() => {
 			}
 			else {
 				this._db = window.sessionStorage;
+				this.initCache('state');
 				for (const key of this.keys()) {
 					if (!key.startsWith(this._prefix)) {
 						this._db.removeItem(key);
@@ -37,7 +39,6 @@ SimpleStore.adapters.push((() => {
 		* Initialization
 		* ----------------------------------------------------------- */
 		async _init() {
-			this._cache   = new Map();
 			this._opening = null;
 			await this._openOrReuse();
 			await this._loadCache();
@@ -237,10 +238,11 @@ SimpleStore.adapters.push((() => {
 			}
 			else {
 				try {
-					if (this.changed || key !== 'state') {
+					if (key !== 'state') {
 						this._db.setItem(this._prefix + key, LZString.compressToUTF16(Serial.stringify(data)));
 					}
-					if (key === 'state') {
+					else if (this.changed) {
+						this._db.setItem(this._prefix + key, LZString.compressToUTF16(Serial.stringify(data)));
 						this.changed = false;
 					}
 				}
@@ -287,6 +289,19 @@ SimpleStore.adapters.push((() => {
 			}
 
 			return true;
+		}
+
+		cache(key, data) {
+			this._changed = true;
+			this._cache.set(key, Serial.stringify(data));
+		}
+		delta(key) {
+			const data = this._cache.get(key);
+			return data == null || State.history.length === 1 ? null : Serial.parse(data); // lazy equality for null
+		}
+		initCache(key) {
+			const data = this._db.getItem(this._prefix + key);
+			if (data != null) this._cache.set(key, LZString.decompressFromUTF16(data));
 		}
 	}
 
