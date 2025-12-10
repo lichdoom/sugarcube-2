@@ -55,7 +55,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 				// the browser, reloads the page, etc.
 				if (Visibility.state === 'hidden') {
 					// Update the current story state.
-					session.set('state', stateMarshal());
+					session.save('state', session.get('state'));
 				}
 			});
 	}
@@ -110,7 +110,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 		};
 
 		if (noDelta) {
-			state.history = clone(_history);
+			state.history = Config.history.maxStates > 1 ? clone(_history) : session.get('state').delta;
 		}
 		else {
 			state.delta = historyDeltaEncode(_history);
@@ -291,7 +291,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 					throw new RangeError(`moment activation attempted with out-of-bounds index; need [0, ${historySize() - 1}], got ${moment}`);
 				}
 
-				_active = clone(_history[moment]);
+				_active = Config.history.maxStates > 1 ? clone(_history[moment]) : _history[moment];
 				break;
 			}
 
@@ -310,9 +310,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 			});
 		}
 
-		session.changed = true;
-		// NOTE: The update of the current session now occurs on page visibility change.
-		// See the `stateInit()` function, in this file, for the implementation.
+		session.set('state', stateMarshal());
 
 		// Trigger a global `:historyupdate` event.
 		//

@@ -19,14 +19,14 @@ SimpleStore.adapters.push((() => {
 			});
 
 			this._db     = null;
-			this.changed = false;
+			this._changed = false;
 
 			if (this.persistent) {
 				this.ready = this._init();
 			}
 			else {
 				this._db = window.sessionStorage;
-				this.initCache('state');
+				this.initCache();
 				for (const key of this.keys()) {
 					if (!key.startsWith(this._prefix)) {
 						this._db.removeItem(key);
@@ -223,45 +223,22 @@ SimpleStore.adapters.push((() => {
 		get(key) {
 			if (typeof key !== 'string' || !key) return null;
 
-			// eslint-disable-next-line max-len
-			const data = this.persistent ? this._cache.get(key) : this._db.getItem(this._prefix + key);
-			return data == null ? null : Serial.parse(LZString.decompressFromUTF16(data)); // lazy equality for null
+			const data = this._cache.get(key);
+			return data == null ? null : Serial.parse(data); // lazy equality for null
 		}
 
 		set(key, data) {
 			if (typeof key !== 'string' || !key) return false;
 
+			const str = Serial.stringify(data);
+			this._cache.set(key, str);
+
 			if (this.persistent) {
-				const str = LZString.compressToUTF16(Serial.stringify(data));
-				this._cache.set(key, str);
 				this._enqueue(store => store.put({ id : key, data : str }));
 			}
-			else {
-				try {
-					if (key !== 'state') {
-						this._db.setItem(this._prefix + key, LZString.compressToUTF16(Serial.stringify(data)));
-					}
-					else if (this.changed) {
-						this._db.setItem(this._prefix + key, LZString.compressToUTF16(Serial.stringify(data)));
-						this.changed = false;
-					}
-				}
-				catch (ex) {
-					// If the exception is a quota exceeded error, massage it into something
-					// a bit nicer for the player.
-					if (isQuotaDOMException(ex)) {
-						throw exceptionFrom(ex, Error, {
-							cause   : { origin : ex },
-							message : `${this.name} quota exceeded`
-						});
-					}
-
-					// Elsewise, simply rethrow the exception.
-					throw ex;
-				}
+			else if (key === 'state') {
+				this._changed = true;
 			}
-
-
 			return true;
 		}
 
@@ -291,17 +268,31 @@ SimpleStore.adapters.push((() => {
 			return true;
 		}
 
-		cache(key, data) {
-			this._changed = true;
-			this._cache.set(key, Serial.stringify(data));
+		save(key) {
+			if (!this._changed) return;
+			
+			try {
+				this._db.setItem(this._prefix + key, this._cache.get(key));
+				this._changed = false;
+			}
+			catch (ex) {
+				// If the exception is a quota exceeded error, massage it into something
+				// a bit nicer for the player.
+				if (isQuotaDOMException(ex)) {
+					throw exceptionFrom(ex, Error, {
+						cause   : { origin : ex },
+						message : `${this.name} quota exceeded`
+					});
+				}
+
+				// Elsewise, simply rethrow the exception.
+				throw ex;
+			}
 		}
-		delta(key) {
-			const data = this._cache.get(key);
-			return data == null || State.history.length === 1 ? null : Serial.parse(data); // lazy equality for null
-		}
-		initCache(key) {
+
+		initCache(key = 'state') {
 			const data = this._db.getItem(this._prefix + key);
-			if (data != null) this._cache.set(key, LZString.decompressFromUTF16(data));
+			if (data !== null) this._cache.set(key, data);
 		}
 	}
 
