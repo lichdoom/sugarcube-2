@@ -18,10 +18,12 @@ SimpleStore.adapters.push((() => {
 			});
 
 			this._db     = null;
-			this.changed = true;
-			this.ready   = this.persistent ? this._init() : null;
+			this.changed = false;
 
-			if (!persistent) {
+			if (this.persistent) {
+				this.ready = this._init();
+			}
+			else {
 				this._db = window.sessionStorage;
 				for (const key of this.keys()) {
 					if (!key.startsWith(this._prefix)) {
@@ -222,25 +224,24 @@ SimpleStore.adapters.push((() => {
 
 			// eslint-disable-next-line max-len
 			const data = this.persistent ? this._cache.get(key) : this._db.getItem(this._prefix + key);
-			return data === undefined ? null : Serial.parse(data);
+			return data == null ? null : Serial.parse(LZString.decompressFromUTF16(data)); // lazy equality for null
 		}
 
 		set(key, data) {
 			if (typeof key !== 'string' || !key) return false;
 
-			const str = Serial.stringify(data);
-
 			if (this.persistent) {
+				const str = LZString.compressToUTF16(Serial.stringify(data));
 				this._cache.set(key, str);
-
-				if (!this.persistent) return true;
 				this._enqueue(store => store.put({ id : key, data : str }));
 			}
 			else {
 				try {
-					if (this.changed) {
+					if (this.changed || key !== 'state') {
+						this._db.setItem(this._prefix + key, LZString.compressToUTF16(Serial.stringify(data)));
+					}
+					if (key === 'state') {
 						this.changed = false;
-						this._db.setItem(this._prefix + key, str);
 					}
 				}
 				catch (ex) {
