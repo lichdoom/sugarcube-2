@@ -181,8 +181,8 @@ jQuery(() => {
 
 		// Initialize the databases.
 		try {
-			SugarCube.session = session = SimpleStore.create(Story.id, false); // eslint-disable-line no-undef
 			SugarCube.storage = storage = SimpleStore.create(Story.id, true); // eslint-disable-line no-undef
+			SugarCube.session = session = SimpleStore.create(Story.id, false); // eslint-disable-line no-undef
 			// Wait for the cache to be populated
 			await storage.ready;
 		}

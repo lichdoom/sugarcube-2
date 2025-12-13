@@ -18,20 +18,15 @@ SimpleStore.adapters.push((() => {
 				persistent : { value : Boolean(persistent) }
 			});
 
-			this._db     = null;
-			this._changed = false;
-
 			if (this.persistent) {
+				this._db   = null;
+				this._open = null;
 				this.ready = this._init();
 			}
 			else {
+				this._save = false;
 				this._db = window.sessionStorage;
 				this.initCache();
-				for (const key of this.keys()) {
-					if (!key.startsWith(this._prefix)) {
-						this._db.removeItem(key);
-					}
-				}
 			}
 		}
 
@@ -39,7 +34,6 @@ SimpleStore.adapters.push((() => {
 		* Initialization
 		* ----------------------------------------------------------- */
 		async _init() {
-			this._opening = null;
 			await this._openOrReuse();
 			await this._loadCache();
 		}
@@ -47,12 +41,12 @@ SimpleStore.adapters.push((() => {
 		// eslint-disable-next-line require-await
 		async _openOrReuse() {
 			if (this._db) return;
-			if (this._opening) return this._opening;
+			if (this._open) return this._open;
 
-			this._opening = this._openDB(this.id)
-				.finally(() => { this._opening = null; });
+			this._open = this._openDB(this.id)
+				.finally(() => { this._open = null; });
 
-			return this._opening;
+			return this._open;
 		}
 
 		_openDB(name) {
@@ -115,7 +109,6 @@ SimpleStore.adapters.push((() => {
 
 				req.onerror = () => reject(req.error);
 				req.onsuccess = () => {
-					this._cache.clear();
 					for (const row of req.result) {
 						this._cache.set(row.id, row.data);
 					}
@@ -196,35 +189,23 @@ SimpleStore.adapters.push((() => {
 		* Public API
 		* ----------------------------------------------------------- */
 		get size() {
-			return this.persistent ? this._cache.size : this.keys().length;
+			return this._cache.size;
 		}
 
 		keys() {
-			if (this.persistent) return [...this._cache.keys()];
-
-			const keys = [];
-			for (let i = 0; i < this._db.length; ++i) {
-				const key = this._db.key(i);
-
-				if (key.startsWith(this._prefix)) {
-					keys.push(key.replace(this._prefix, ''));
-				}
-			}
-			return keys;
+			return [...this._cache.keys()];
 		}
 
 		has(key) {
 			if (typeof key !== 'string' || !key) return false;
 
-			if (this.persistent) return this._cache.has(key);
-			return Object.hasOwn(this._db, this._prefix + key);
+			return this._cache.has(key);
 		}
 
 		get(key) {
 			if (typeof key !== 'string' || !key) return null;
 
-			const data = this._cache.get(key);
-			return data == null ? null : Serial.parse(data); // lazy equality for null
+			return Serial.parse(this._cache.get(key) ?? null);
 		}
 
 		set(key, data) {
@@ -237,7 +218,7 @@ SimpleStore.adapters.push((() => {
 				this._enqueue(store => store.put({ id : key, data : str }));
 			}
 			else if (key === 'state') {
-				this._changed = true;
+				this._save = true;
 			}
 			return true;
 		}
@@ -245,35 +226,35 @@ SimpleStore.adapters.push((() => {
 		delete(key) {
 			if (typeof key !== 'string' || !key) return false;
 
+			this._cache.delete(key);
+
 			if (this.persistent) {
-				this._cache.delete(key);
 				this._enqueue(store => store.delete(key));
 			}
 			else {
 				this._db.removeItem(this._prefix + key);
 			}
-
 			return true;
 		}
 
 		clear() {
+			this._cache.clear();
+
 			if (this.persistent) {
-				this._cache.clear();
 				this._enqueue(store => store.clear());
 			}
 			else {
 				this._db.clear();
 			}
-
 			return true;
 		}
 
 		save(key) {
-			if (!this._changed) return;
+			if (!this._save) return;
 			
 			try {
 				this._db.setItem(this._prefix + key, this._cache.get(key));
-				this._changed = false;
+				this._save = false;
 			}
 			catch (ex) {
 				// If the exception is a quota exceeded error, massage it into something
@@ -290,9 +271,17 @@ SimpleStore.adapters.push((() => {
 			}
 		}
 
-		initCache(key = 'state') {
-			const data = this._db.getItem(this._prefix + key);
-			if (data !== null) this._cache.set(key, data);
+		initCache() {
+			for (let i = this._db.length; --i >= 0;) {
+				const key = this._db.key(i);
+
+				if (key.startsWith(this._prefix)) {
+					this._cache.set(key.slice(this._prefix.length), this._db.getItem(key));
+				}
+				else {
+					this._db.removeItem(key);
+				}
+			}
 		}
 	}
 
