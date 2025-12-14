@@ -253,10 +253,8 @@ SimpleStore.adapters.push((() => {
 			if (!this._save) return;
 			
 			try {
-				if (this.has(key)) {
-					this._db.setItem(this._id + key, LZString.compressToUTF16(this._cache.get(key)));
-					this._save = false;
-				}
+				this._db.setItem(this._id + key, LZString.compressToUTF16(this._cache.get(key)));
+				this._save = false;
 			}
 			catch (ex) {
 				// If the exception is a quota exceeded error, massage it into something
