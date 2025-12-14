@@ -12,7 +12,7 @@ SimpleStore.adapters.push((() => {
 		constructor(storageId, persistent) {
 			Object.defineProperties(this, {
 				_cache     : { value : new Map() },
-				_prefix    : { value : `${storageId}.` },
+				_id        : { value : `${storageId}.` },
 				name       : { value : 'IndexedDB' },
 				id         : { value : storageId },
 				persistent : { value : Boolean(persistent) }
@@ -232,7 +232,7 @@ SimpleStore.adapters.push((() => {
 				this._enqueue(store => store.delete(key));
 			}
 			else {
-				this._db.removeItem(this._prefix + key);
+				this._db.removeItem(this._id + key);
 			}
 			return true;
 		}
@@ -253,8 +253,10 @@ SimpleStore.adapters.push((() => {
 			if (!this._save) return;
 			
 			try {
-				this._db.setItem(this._prefix + key, this._cache.get(key));
-				this._save = false;
+				if (this.has(key)) {
+					this._db.setItem(this._id + key, LZString.compressToUTF16(this._cache.get(key)));
+					this._save = false;
+				}
 			}
 			catch (ex) {
 				// If the exception is a quota exceeded error, massage it into something
@@ -275,8 +277,8 @@ SimpleStore.adapters.push((() => {
 			for (let i = this._db.length; --i >= 0;) {
 				const key = this._db.key(i);
 
-				if (key.startsWith(this._prefix)) {
-					this._cache.set(key.slice(this._prefix.length), this._db.getItem(key));
+				if (key.startsWith(this._id)) {
+					this._cache.set(key.slice(this._id.length), LZString.decompressFromUTF16(this._db.getItem(key)));
 				}
 				else {
 					this._db.removeItem(key);

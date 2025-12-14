@@ -55,7 +55,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 				// the browser, reloads the page, etc.
 				if (Visibility.state === 'hidden') {
 					// Update the current story state.
-					session.save('state', session.get('state'));
+					session.save('state');
 				}
 			});
 	}
@@ -110,7 +110,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 		};
 
 		if (noDelta) {
-			state.history = clone(_history);
+			state.history = Config.history.maxStates > 1 ? clone(_history) : session.get('state').delta;
 		}
 		else {
 			state.delta = historyDeltaEncode(_history);
