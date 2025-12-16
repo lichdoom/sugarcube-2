@@ -429,7 +429,7 @@ var Save = (() => { // eslint-disable-line no-unused-vars, no-var
 	}
 
 	function autoIsEnabled() {
-		return storage.name !== 'cookie' && Config.saves.maxAutoSaves > 0;
+		return Config.saves.maxAutoSaves > 0;
 	}
 
 	function autoLoad(index) {
@@ -543,7 +543,7 @@ var Save = (() => { // eslint-disable-line no-unused-vars, no-var
 	}
 
 	function slotIsEnabled() {
-		return storage.name !== 'cookie' && Config.saves.maxSlotSaves > 0;
+		return Config.saves.maxSlotSaves > 0;
 	}
 
 	function slotLoad(index) {

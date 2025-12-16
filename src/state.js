@@ -6,9 +6,12 @@
 	Use of this source code is governed by a BSD 2-clause "Simplified" License, which may be found in the LICENSE file.
 
 ***********************************************************************************************************************/
-/* global Config, Diff, Scripting, clone, session, storage, triggerEvent */
+/* global Config, Diff, Scripting, Visibility, clone, session, storage, triggerEvent */
 
 var State = (() => { // eslint-disable-line no-unused-vars, no-var
+	// Have we been initialized.
+	let initialized = false;
+
 	// History moment stack.
 	let _history = [];
 
@@ -33,13 +36,39 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 	*******************************************************************************/
 
 	/*
+		Initializes the story state API.
+	*/
+	function stateInit() {
+		if (initialized) {
+			return;
+		}
+
+		if (BUILD_DEBUG) { console.log('[State/init()]'); }
+
+		initialized = true;
+
+		// Listen for visibility change events.
+		jQuery(document)
+			.on(`${Visibility.changeEvent}.State_init`, () => {
+				// Visibility state `'hidden'` occurs when the end-user navigates away from
+				// the active tab—i.e., switches apps/tabs, goes to the homescreen, minimizes
+				// the browser, reloads the page, etc.
+				if (Visibility.state === 'hidden') {
+					// Update the current story state.
+					session.save('state');
+					session.save('debug.state');
+				}
+			});
+	}
+
+	/*
 		Resets the story state.
 	*/
 	function stateReset() {
 		if (BUILD_DEBUG) { console.log('[State/stateReset()]'); }
 
 		// Delete the active session.
-		session.delete('state');
+		session.clear();
 
 		// Reset the properties.
 		_history     = [];
@@ -63,7 +92,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 
 		if (BUILD_DEBUG) { console.log('\tsession state:', state); }
 
-		if (state == null) { // lazy equality for null
+		if (state == null || state.index === -1) { // nullish test
 			return false;
 		}
 
@@ -82,7 +111,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 		};
 
 		if (noDelta) {
-			state.history = clone(_history);
+			state.history = Config.history.maxStates > 1 ? clone(_history) : session.get('state').delta;
 		}
 		else {
 			state.delta = historyDeltaEncode(_history);
@@ -205,7 +234,8 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 	function momentCreate(title, variables) {
 		return {
 			title     : title == null ? '' : String(title),       // lazy equality for null
-			variables : variables == null ? {} : clone(variables) // lazy equality for null
+			// eslint-disable-next-line no-nested-ternary
+			variables : variables == null ? {} : Config.history.maxStates > 1 ? clone(variables) : variables // nullish test
 		};
 	}
 
@@ -262,7 +292,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 					throw new RangeError(`moment activation attempted with out-of-bounds index; need [0, ${historySize() - 1}], got ${moment}`);
 				}
 
-				_active = clone(_history[moment]);
+				_active = Config.history.maxStates > 1 ? clone(_history[moment]) : _history[moment];
 				break;
 			}
 
@@ -281,7 +311,6 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 			});
 		}
 
-		// Update the active session.
 		session.set('state', stateMarshal());
 
 		// Trigger a global `:historyupdate` event.
@@ -743,6 +772,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 
 	return Object.preventExtensions(Object.create(null, {
 		// State Functions.
+		init             : { value : stateInit },
 		reset            : { value : stateReset },
 		restore          : { value : stateRestore },
 		marshalForSave   : { value : stateMarshalForSave },

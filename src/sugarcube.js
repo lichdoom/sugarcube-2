@@ -172,12 +172,10 @@ jQuery(() => {
 	LoadScreen.init();
 
 	// Normalize the document.
-	if (document.normalize) {
-		document.normalize();
-	}
+	document.normalize?.();
 
 	// From this point on it's promises all the way down.
-	new Promise(resolve => {
+	new Promise(async resolve => {
 		// Initialize the story.
 		Story.init();
 
@@ -185,10 +183,15 @@ jQuery(() => {
 		try {
 			SugarCube.storage = storage = SimpleStore.create(Story.id, true); // eslint-disable-line no-undef
 			SugarCube.session = session = SimpleStore.create(Story.id, false); // eslint-disable-line no-undef
+			// Wait for the cache to be populated
+			await storage.ready;
 		}
 		catch (ex) {
 			throw new Error(L10n.get('warningNoStorage'));
 		}
+
+		// Initialize the story state.
+		State.init();
 
 		// Initialize the user interfaces.
 		//
@@ -203,14 +206,6 @@ jQuery(() => {
 
 		// Initialize the localization (must be done after user scripts).
 		L10n.init();
-
-		// Alert when the browser is degrading required capabilities.
-		if (!session.has('rcWarn') && storage.name === 'cookie') {
-			/* eslint-disable no-alert */
-			session.set('rcWarn', 1);
-			window.alert(L10n.get('warningNoWebStorage'));
-			/* eslint-enable no-alert */
-		}
 
 		// Initialize the saves.
 		Save.init();
