@@ -96,12 +96,6 @@ button#ui-bar-toggle {
 	right: 0;
 	top: 0;
 }
-#ui-bar-history {
-	margin: 0 auto;
-}
-#ui-bar-history button:not(:first-child) {
-	margin-left: 1.2em;
-}
 #ui-bar-body > :not(:first-child) {
 	margin-top: 2em;
 }

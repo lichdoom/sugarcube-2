@@ -21,8 +21,8 @@ var Config = (() => { // eslint-disable-line no-unused-vars, no-var
 	let _audioPreloadMetadata   = true;
 
 	// State history settings.
-	let _historyControls  = true;
-	let _historyMaxStates = 40;
+	const _historyControls  = false;
+	const _historyMaxStates = 1;
 
 	// Macros settings.
 	let _macrosMaxLoopIterations   = 1000;
@@ -116,29 +116,7 @@ var Config = (() => { // eslint-disable-line no-unused-vars, no-var
 		history : Object.freeze({
 			// TODO: (v3) This should be under UI settings → `Config.ui.historyControls`.
 			get controls() { return _historyControls; },
-			set controls(value) {
-				const controls = Boolean(value);
-
-				if (_historyMaxStates === 1 && controls) {
-					throw new Error('Config.history.controls must be false when Config.history.maxStates is 1');
-				}
-
-				_historyControls = controls;
-			},
-
-			get maxStates() { return _historyMaxStates; },
-			set maxStates(value) {
-				if (!Number.isSafeInteger(value) || value < 1) {
-					throw new RangeError('Config.history.maxStates must be a positive integer');
-				}
-
-				_historyMaxStates = value;
-
-				// Force `Config.history.controls` to `false`, when limited to `1` moment.
-				if (_historyControls && value === 1) {
-					_historyControls = false;
-				}
-			}
+			get maxStates() { return _historyMaxStates; }
 		}),
 
 		/*

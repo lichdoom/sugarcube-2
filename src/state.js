@@ -111,7 +111,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 		};
 
 		if (noDelta) {
-			state.history = Config.history.maxStates > 1 ? clone(_history) : session.get('state').delta;
+			state.history = session.get('state').delta;
 		}
 		else {
 			state.delta = historyDeltaEncode(_history);
@@ -234,8 +234,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 	function momentCreate(title, variables) {
 		return {
 			title     : title == null ? '' : String(title),       // lazy equality for null
-			// eslint-disable-next-line no-nested-ternary
-			variables : variables == null ? {} : Config.history.maxStates > 1 ? clone(variables) : variables // nullish test
+			variables : variables ?? null // nullish test
 		};
 	}
 
@@ -292,7 +291,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 					throw new RangeError(`moment activation attempted with out-of-bounds index; need [0, ${historySize() - 1}], got ${moment}`);
 				}
 
-				_active = Config.history.maxStates > 1 ? clone(_history[moment]) : _history[moment];
+				_active = _history[moment];
 				break;
 			}
 
