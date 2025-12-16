@@ -56,6 +56,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 				if (Visibility.state === 'hidden') {
 					// Update the current story state.
 					session.save('state');
+					session.save('debug.state');
 				}
 			});
 	}
@@ -67,7 +68,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 		if (BUILD_DEBUG) { console.log('[State/stateReset()]'); }
 
 		// Delete the active session.
-		session.delete('state');
+		session.clear();
 
 		// Reset the properties.
 		_history     = [];

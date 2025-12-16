@@ -24,8 +24,8 @@ SimpleStore.adapters.push((() => {
 				this.ready = this._init();
 			}
 			else {
+				this._db   = window.sessionStorage;
 				this._save = false;
-				this._db = window.sessionStorage;
 				this.initCache();
 			}
 		}
@@ -250,11 +250,14 @@ SimpleStore.adapters.push((() => {
 		}
 
 		save(key) {
-			if (!this._save) return;
-			
+			if (!this.has(key)) return;
+
+			const isState = key === 'state';
+			if (isState && !this._save) return;
+
 			try {
 				this._db.setItem(this._id + key, LZString.compressToUTF16(this._cache.get(key)));
-				this._save = false;
+				if (isState) this._save = false;
 			}
 			catch (ex) {
 				// If the exception is a quota exceeded error, massage it into something

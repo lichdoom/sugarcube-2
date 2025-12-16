@@ -12,7 +12,6 @@ var Config = (() => { // eslint-disable-line no-unused-vars, no-var
 	// General settings.
 	let _addVisitedLinkClass     = false;
 	let _cleanupWikifierOutput   = false;
-	let _clearSession            = true;
 	let _debug                   = false;
 	let _enableOptionalDebugging = false;
 	let _loadDelay               = 0;
@@ -84,9 +83,6 @@ var Config = (() => { // eslint-disable-line no-unused-vars, no-var
 
 		get cleanupWikifierOutput() { return _cleanupWikifierOutput; },
 		set cleanupWikifierOutput(value) { _cleanupWikifierOutput = Boolean(value); },
-
-		get clearSession() { return _clearSession; },
-		set clearSession(value) { _clearSession = Boolean(value); },
 
 		get debug() { return _debug; },
 		set debug(value) { _debug = Boolean(value); },
