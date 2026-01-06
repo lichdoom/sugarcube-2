@@ -25,7 +25,7 @@ SimpleStore.adapters.push((() => {
 			}
 			else {
 				this._db   = window.sessionStorage;
-				this._save = false;
+				this._save = new Set();
 				this.initCache();
 			}
 		}
@@ -217,8 +217,8 @@ SimpleStore.adapters.push((() => {
 			if (this.persistent) {
 				this._enqueue(store => store.put({ id : key, data : str }));
 			}
-			else if (key === 'state') {
-				this._save = true;
+			else {
+				this._save.add(key);
 			}
 			return true;
 		}
@@ -233,6 +233,7 @@ SimpleStore.adapters.push((() => {
 			}
 			else {
 				this._db.removeItem(this._id + key);
+				this._save.delete(key);
 			}
 			return true;
 		}
@@ -245,33 +246,31 @@ SimpleStore.adapters.push((() => {
 			}
 			else {
 				this._db.clear();
+				this._save.clear();
 			}
 			return true;
 		}
 
-		save(key) {
-			if (!this.has(key)) return;
-
-			const isState = key === 'state';
-			if (isState && !this._save) return;
-
-			try {
-				this._db.setItem(this._id + key, LZString.compressToUTF16(this._cache.get(key)));
-				if (isState) this._save = false;
-			}
-			catch (ex) {
-				// If the exception is a quota exceeded error, massage it into something
-				// a bit nicer for the player.
-				if (isQuotaDOMException(ex)) {
-					throw exceptionFrom(ex, Error, {
-						cause   : { origin : ex },
-						message : `${this.name} quota exceeded`
-					});
+		save() {
+			for (const key of this._save) {
+				try {
+					this._db.setItem(this._id + key, LZString.compressToUTF16(this._cache.get(key)));
 				}
+				catch (ex) {
+					// If the exception is a quota exceeded error, massage it into something
+					// a bit nicer for the player.
+					if (isQuotaDOMException(ex)) {
+						throw exceptionFrom(ex, Error, {
+							cause   : { origin : ex },
+							message : `${this.name} quota exceeded`
+						});
+					}
 
-				// Elsewise, simply rethrow the exception.
-				throw ex;
+					// Elsewise, simply rethrow the exception.
+					throw ex;
+				}
 			}
+			this._save.clear();
 		}
 
 		initCache() {
