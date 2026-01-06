@@ -67,7 +67,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 		if (BUILD_DEBUG) { console.log('[State/stateReset()]'); }
 
 		// Delete the active session.
-		session.clear();
+		session.delete('state');
 
 		// Reset the properties.
 		_history     = [];
