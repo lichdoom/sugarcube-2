@@ -166,7 +166,9 @@ var DebugBar = (() => { // eslint-disable-line no-unused-vars, no-var
 				updateVarList();
 			})
 			// Set up a handler for the history select.
-			.on(':historyupdate.debug-bar', updateTurnSelect);
+			.on(':historyupdate.debug-bar', updateTurnSelect)
+			// Set up a handler for engine resets to clear the active debug session.
+			.on(':enginerestart.debug-bar', clearSession);
 	}
 
 	function debugBarStart() {
@@ -344,8 +346,18 @@ var DebugBar = (() => { // eslint-disable-line no-unused-vars, no-var
 		}
 	}
 
+	function clearSession() {
+		session.delete(STORAGE_KEY);
+	}
+
+	function hasSession() {
+		return session.has(STORAGE_KEY);
+	}
+
 	function restoreSession() {
-		if (!session.has(STORAGE_KEY)) return false;
+		if (!hasSession()) {
+			return false;
+		}
 
 		const debugState = session.get(STORAGE_KEY);
 
