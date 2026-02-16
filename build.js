@@ -40,7 +40,6 @@ const CONFIG = {
 			'src/lib/debugview.js',
 			'src/lib/nodetyper.js',
 			'src/lib/stylewrapper.js',
-			'src/lib/diff.js',
 			'src/l10n/l10n.js',
 			'src/l10n/strings.js',
 			'src/config.js',

@@ -6,7 +6,7 @@
 	Use of this source code is governed by a BSD 2-clause "Simplified" License, which may be found in the LICENSE file.
 
 ***********************************************************************************************************************/
-/* global Config, Diff, Scripting, Visibility, clone, session, storage, triggerEvent */
+/* global Config, Scripting, Visibility, clone, session, storage, triggerEvent */
 
 var State = (() => { // eslint-disable-line no-unused-vars, no-var
 	// Have we been initialized.
@@ -110,10 +110,10 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 		};
 
 		if (noDelta) {
-			state.history = session.get('state').delta;
+			state.history = session.get('state').history;
 		}
 		else {
-			state.delta = historyDeltaEncode(_history);
+			state.history = _history;
 		}
 
 		if (_expired.length > 0) {
@@ -136,8 +136,8 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 		}
 
 		if (
-			!Object.hasOwn(state, noDelta ? 'history' : 'delta')
-			|| state[noDelta ? 'history' : 'delta'].length === 0
+			!Object.hasOwn(state, 'history')
+			|| state.history.length === 0
 		) {
 			throw new Error('state object has no history or history is empty');
 		}
@@ -155,7 +155,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 		}
 
 		// Restore the properties.
-		_history     = noDelta ? clone(state.history) : historyDeltaDecode(state.delta);
+		_history     = clone(state.history);
 		_activeIndex = state.index;
 		_expired     = Object.hasOwn(state, 'expired') ? Array.from(state.expired) : [];
 
@@ -487,50 +487,6 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 		return historyGoTo(_activeIndex + offset);
 	}
 
-	/*
-		Returns the delta encoded form of the given history array.
-	*/
-	function historyDeltaEncode(historyArr) {
-		if (!Array.isArray(historyArr)) {
-			return null;
-		}
-
-		if (historyArr.length === 0) {
-			return [];
-		}
-
-		// NOTE: The `clone()` call here is likely unnecessary within the current codebase.
-		// const delta = [clone(historyArr[0])];
-		const delta = [historyArr[0]];
-
-		for (let i = 1, iend = historyArr.length; i < iend; ++i) {
-			delta.push(Diff.diff(historyArr[i - 1], historyArr[i]));
-		}
-
-		return delta;
-	}
-
-	/*
-		Returns a history array from the given delta encoded history array.
-	*/
-	function historyDeltaDecode(delta) {
-		if (!Array.isArray(delta)) {
-			return null;
-		}
-
-		if (delta.length === 0) {
-			return [];
-		}
-
-		const historyArr = [clone(delta[0])];
-
-		for (let i = 1, iend = delta.length; i < iend; ++i) {
-			historyArr.push(Diff.patch(historyArr[i - 1], delta[i]));
-		}
-
-		return historyArr;
-	}
-
 
 	/*******************************************************************************
 		PRNG Functions.
@@ -800,8 +756,6 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 		create      : { value : historyCreate },
 		goTo        : { value : historyGoTo },
 		go          : { value : historyGo },
-		deltaEncode : { value : historyDeltaEncode },
-		deltaDecode : { value : historyDeltaDecode },
 
 		// PRNG Functions.
 		prng : {
