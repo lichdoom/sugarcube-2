@@ -53,7 +53,6 @@ const CONFIG = {
 			'src/macro/macro.js',
 			'src/macro/macrocontext.js',
 			'src/macro/macros/',
-			'src/macro/deprecated-macros.js',
 			'src/dialog.js',
 			'src/engine.js',
 			'src/passage.js',
@@ -64,7 +63,6 @@ const CONFIG = {
 			'src/uibar.js',
 			'src/debugbar.js',
 			'src/loadscreen.js',
-			'src/lib/deprecated-util.js',
 			'src/sugarcube.js'
 		],
 		wrap : {
@@ -87,7 +85,6 @@ const CONFIG = {
 			'src/css/ui-dialog.css',
 			'src/css/ui-dialog-saves.css',
 			'src/css/ui-dialog-settings.css',
-			'src/css/ui-dialog-legacy.css',
 			'src/css/ui-bar.css',
 			'src/css/ui-debug-bar.css',
 			'src/css/ui-debug-views.css'

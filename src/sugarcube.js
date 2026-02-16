@@ -9,7 +9,7 @@
 /*
 	global Alert, Browser, Config, Dialog, Engine, Fullscreen, Has, LoadScreen, SimpleStore, L10n, Macro,
 	       Outliner, Passage, Save, Scripting, Setting, SimpleAudio, State, Story, UI, UIBar, DebugBar,
-	       Util, Visibility, Wikifier, triggerEvent
+	       Visibility, Wikifier, triggerEvent
 */
 /* eslint-disable no-var */
 
@@ -143,7 +143,6 @@ Object.defineProperty(window, 'SugarCube', {
 		UI,
 		UIBar,
 		DebugBar,
-		Util,
 		Visibility,
 		Wikifier,
 		session,
