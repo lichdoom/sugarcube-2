@@ -6,7 +6,7 @@
 	Use of this source code is governed by a BSD 2-clause "Simplified" License, which may be found in the LICENSE file.
 
 ***********************************************************************************************************************/
-/* global Config, Scripting, Visibility, clone, session, storage, triggerEvent */
+/* global Scripting, Visibility, clone, session, storage, triggerEvent */
 
 var State = (() => { // eslint-disable-line no-unused-vars, no-var
 	// Have we been initialized.
@@ -174,13 +174,6 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 	*/
 	function stateMarshalForSave() {
 		return stateMarshal(true);
-	}
-
-	/*
-		Restores the story state from a marshaled save-compatible story state serialization object.
-	*/
-	function stateUnmarshalForSave(state) {
-		return stateUnmarshal(state);
 	}
 
 	/*
@@ -427,13 +420,6 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 
 		// TODO: It might be good to have some assertions about the passage title here.
 
-		// If we're not at the top of the stack, discard the future moments.
-		if (historyLength() < historySize()) {
-			if (BUILD_DEBUG) { console.log(`\tnon-top push; discarding ${historySize() - historyLength()} future moments`); }
-
-			_history.splice(historyLength(), historySize() - historyLength());
-		}
-
 		// Push the new moment onto the history stack.
 		_history.push(momentCreate(title, _active.variables));
 
@@ -442,7 +428,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 		}
 
 		// Truncate the history, if necessary, by discarding moments from the bottom.
-		while (historySize() > Config.history.maxStates) {
+		while (historySize() > 1) {
 			_expired.push(_history.shift().title);
 		}
 
@@ -730,7 +716,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 		reset            : { value : stateReset },
 		restore          : { value : stateRestore },
 		marshalForSave   : { value : stateMarshalForSave },
-		unmarshalForSave : { value : stateUnmarshalForSave },
+		unmarshalForSave : { value : stateUnmarshal },
 		expired          : { get : stateExpired },
 		turns            : { get : stateTurns },
 		passages         : { get : stateTitles },

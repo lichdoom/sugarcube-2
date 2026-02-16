@@ -20,10 +20,6 @@ var Config = (() => { // eslint-disable-line no-unused-vars, no-var
 	let _audioPauseOnFadeToZero = true;
 	let _audioPreloadMetadata   = true;
 
-	// State history settings.
-	const _historyControls  = false;
-	const _historyMaxStates = 1;
-
 	// Macros settings.
 	let _macrosMaxLoopIterations   = 1000;
 	let _macrosTypeSkipKey         = '\x20'; // Space
@@ -108,16 +104,6 @@ var Config = (() => { // eslint-disable-line no-unused-vars, no-var
 
 			get preloadMetadata() { return _audioPreloadMetadata; },
 			set preloadMetadata(value) { _audioPreloadMetadata = Boolean(value); }
-		}),
-
-		/*
-			State history settings.
-		*/
-		history : Object.freeze({
-			// TODO: (v3) This should be under UI settings → `Config.ui.historyControls`.
-			get controls() { return _historyControls; },
-			get maxStates() { return _historyMaxStates; },
-			set maxStates(value) { }
 		}),
 
 		/*

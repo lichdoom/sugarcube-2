@@ -156,14 +156,8 @@ button#ui-bar-toggle {
 #ui-bar.stowed #ui-bar-toggle::before {
 	content: "\f054";
 }
-#ui-bar-tray #history-backward::before {
-	content: "\f060";
-}
 #ui-bar-tray #history-jumpto::before {
 	content: "\f0e7";
-}
-#ui-bar-tray #history-forward::before {
-	content: "\f061";
 }
 #menu-item-continue a::before,
 #menu-item-saves a::before,

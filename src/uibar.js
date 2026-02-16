@@ -77,14 +77,6 @@ var UIBar = (() => { // eslint-disable-line no-unused-vars, no-var
 
 		// Insert the UI bar elements into the page before the main script.
 		$elems.insertBefore('body>script#script-sugarcube');
-
-		// Set up the UI bar's global event handlers.
-		jQuery(document)
-			// Set up a handler for the history-backward/-forward buttons.
-			.on(`:historyupdate${EVENT_NS}`, (($backward, $forward) => () => {
-				$backward.ariaDisabled(State.length < 2);
-				$forward.ariaDisabled(State.length === State.size);
-			})(jQuery('#history-backward'), jQuery('#history-forward')));
 	}
 
 
