@@ -116,7 +116,8 @@ var Config = (() => { // eslint-disable-line no-unused-vars, no-var
 		history : Object.freeze({
 			// TODO: (v3) This should be under UI settings → `Config.ui.historyControls`.
 			get controls() { return _historyControls; },
-			get maxStates() { return _historyMaxStates; }
+			get maxStates() { return _historyMaxStates; },
+			set maxStates(value) { }
 		}),
 
 		/*

@@ -233,7 +233,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 	function momentCreate(title, variables) {
 		return {
 			title     : title == null ? '' : String(title),       // lazy equality for null
-			variables : variables ?? null // nullish test
+			variables : variables ?? {} // nullish test
 		};
 	}
 
