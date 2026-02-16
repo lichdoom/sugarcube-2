@@ -130,7 +130,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 	/*
 		Restores the story state from a marshaled story state serialization object.
 	*/
-	function stateUnmarshal(state, noDelta) {
+	function stateUnmarshal(state) {
 		if (state == null) { // lazy equality for null
 			throw new Error('state object is null or undefined');
 		}
@@ -180,7 +180,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 		Restores the story state from a marshaled save-compatible story state serialization object.
 	*/
 	function stateUnmarshalForSave(state) {
-		return stateUnmarshal(state, true);
+		return stateUnmarshal(state);
 	}
 
 	/*
@@ -743,19 +743,19 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
 		variables   : { get : momentActiveVariables }, // shortcut for `State.active.variables`
 
 		// History Functions.
-		history     : { get : historyGet },
-		length      : { get : historyLength },
-		size        : { get : historySize },
-		isEmpty     : { value : historyIsEmpty },
-		current     : { get : historyCurrent },
-		top         : { get : historyTop },
-		bottom      : { get : historyBottom },
-		index       : { value : historyIndex },
-		peek        : { value : historyPeek },
-		has         : { value : historyHas },
-		create      : { value : historyCreate },
-		goTo        : { value : historyGoTo },
-		go          : { value : historyGo },
+		history : { get : historyGet },
+		length  : { get : historyLength },
+		size    : { get : historySize },
+		isEmpty : { value : historyIsEmpty },
+		current : { get : historyCurrent },
+		top     : { get : historyTop },
+		bottom  : { get : historyBottom },
+		index   : { value : historyIndex },
+		peek    : { value : historyPeek },
+		has     : { value : historyHas },
+		create  : { value : historyCreate },
+		goTo    : { value : historyGoTo },
+		go      : { value : historyGo },
 
 		// PRNG Functions.
 		prng : {
