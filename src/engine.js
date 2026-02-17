@@ -784,39 +784,6 @@ var Engine = (() => { // eslint-disable-line no-unused-vars, no-var
 
 
 	/*******************************************************************************
-		Deprecated Functions.
-	*******************************************************************************/
-
-	/*
-		[DEPRECATED] Play the given passage, optionally without altering the history.
-	*/
-	function engineDisplay(title, link, option) {
-		if (BUILD_DEBUG) { console.log('[Engine/engineDisplay()]'); }
-
-		console.warn('[DEPRECATED] Engine.display() is deprecated.');
-
-		let noHistory = false;
-
-		// Process the option parameter.
-		switch (option) {
-			case undefined:
-				/* no-op */
-				break;
-
-			case 'replace':
-			case 'back':
-				noHistory = true;
-				break;
-
-			default:
-				throw new Error(`Engine.display option parameter called with obsolete value "${option}"; please notify the developer`);
-		}
-
-		enginePlay(title, noHistory);
-	}
-
-
-	/*******************************************************************************
 		Object Exports.
 	*******************************************************************************/
 
@@ -841,10 +808,6 @@ var Engine = (() => { // eslint-disable-line no-unused-vars, no-var
 		backward       : { value : engineBackward },
 		forward        : { value : engineForward },
 		show           : { value : engineShow },
-		play           : { value : enginePlay },
-
-		// Deprecated Functions.
-		display           : { value : engineDisplay },
-		minDomActionDelay : { get : () => DOM_DELAY }
+		play           : { value : enginePlay }
 	}));
 })();

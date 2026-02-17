@@ -458,22 +458,6 @@ var Dialog = (() => { // eslint-disable-line no-unused-vars, no-var
 
 
 	/*******************************************************************************
-		Deprecated Functions.
-	*******************************************************************************/
-
-	/*
-		[DEPRECATED] Prepares the dialog for use.
-		Returns the dialog's body container.
-	*/
-	function setup(title, classNames) {
-		console.warn('[DEPRECATED] Dialog.setup() is deprecated.');
-
-		create(title, classNames);
-		return getBody();
-	}
-
-
-	/*******************************************************************************
 		Object Exports.
 	*******************************************************************************/
 
@@ -488,9 +472,6 @@ var Dialog = (() => { // eslint-disable-line no-unused-vars, no-var
 		open        : { value : open },
 		resize      : { value : resize },
 		wiki        : { value : wiki },
-		wikiPassage : { value : wikiPassage },
-
-		// Deprecated Functions.
-		setup : { value : setup }
+		wikiPassage : { value : wikiPassage }
 	}));
 })();

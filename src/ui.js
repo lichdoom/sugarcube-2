@@ -7,7 +7,7 @@
 
 ***********************************************************************************************************************/
 /*
-	global Alert, Config, Dialog, Engine, Has, L10n, Save, Setting, State, Story, Wikifier,
+	global Config, Dialog, Engine, Has, L10n, Save, Setting, Story, Wikifier,
 	       createSlug, errorPrologRegExp, triggerEvent
 */
 
@@ -729,127 +729,6 @@ var UI = (() => { // eslint-disable-line no-unused-vars, no-var
 
 
 	/*******************************************************************************
-		Deprecated Functions.
-	*******************************************************************************/
-
-	// [DEPRECATED]
-	function buildAutoload() {
-		if (BUILD_DEBUG) { console.log('[UI/buildAutoload()]'); }
-
-		console.warn('[DEPRECATED] UI.buildAutoload() is deprecated.');
-
-		Dialog
-			.create(L10n.get('autoloadTitle'), 'autoload')
-			.append(
-				/* eslint-disable max-len */
-				  `<p>${L10n.get('autoloadMesgPrompt')}</p><ul class="buttons">`
-				+ `<li><button id="autoload-ok" class="ui-close">${L10n.get(['autoloadTextOk', 'textOk'])}</button></li>`
-				+ `<li><button id="autoload-cancel" class="ui-close">${L10n.get(['autoloadTextCancel', 'textCancel'])}</button></li>`
-				+ '</ul>'
-				/* eslint-enable max-len */
-			);
-
-		// Add an additional delegated click handler for the `.ui-close` elements to handle autoloading.
-		jQuery(document).one('click.autoload', '.ui-close', ev => {
-			const isAutoloadOk = ev.target.id === 'autoload-ok';
-			jQuery(document).one(':dialogclosed', () => {
-				new Promise((resolve, reject) => {
-					if (isAutoloadOk) {
-						resolve();
-					}
-
-					reject(); // eslint-disable-line prefer-promise-reject-errors
-				})
-					.then(() => {
-						if (BUILD_DEBUG) { console.log('\tattempting autoload of browser continue'); }
-
-						return Save.browser.continue();
-					})
-					.catch(() => {
-						if (BUILD_DEBUG) { console.log(`\tstarting passage: "${Config.passages.start}"`); }
-
-						Engine.play(Config.passages.start);
-					});
-			});
-		});
-
-		return true;
-	}
-
-	// [DEPRECATED]
-	function buildJumpto() {
-		if (BUILD_DEBUG) { console.log('[UI/buildJumpto()]'); }
-
-		console.warn('[DEPRECATED] UI.buildJumpto() is deprecated.');
-
-		const list = document.createElement('ul');
-
-		Dialog
-			.create(L10n.get('jumptoTitle'), 'jumpto list')
-			.append(list);
-
-		const expired = State.expired.length;
-
-		for (let i = State.size - 1; i >= 0; --i) {
-			if (i === State.activeIndex) {
-				continue;
-			}
-
-			const passage = Story.get(State.history[i].title);
-
-			if (passage && passage.tags.includes('bookmark')) {
-				jQuery(document.createElement('li'))
-					.append(
-						jQuery(document.createElement('a'))
-							.ariaClick({ one : true }, (function (index) {
-								return () => jQuery(document).one(':dialogclosed', () => Engine.goTo(index));
-							})(i))
-							.addClass('ui-close')
-							.text(`${L10n.get('textTurn')} ${expired + i + 1}`)
-					)
-					.appendTo(list);
-			}
-		}
-
-		if (!list.hasChildNodes()) {
-			jQuery(list).append(`<li><a><em>${L10n.get('jumptoMesgUnavailable')}</em></a></li>`);
-		}
-	}
-
-	// [DEPRECATED]
-	function buildShare() {
-		if (BUILD_DEBUG) { console.log('[UI/buildShare()]'); }
-
-		console.warn('[DEPRECATED] UI.buildShare() is deprecated.');
-
-		try {
-			Dialog
-				.create(L10n.get('shareTitle'), 'share list')
-				.append(assembleLinkList('StoryShare'));
-		}
-		catch (ex) {
-			console.error(ex);
-			Alert.error('StoryShare', ex.message);
-			return false;
-		}
-
-		return true;
-	}
-
-	// [DEPRECATED]
-	function openJumpto(/* options, closeFn */ ...args) {
-		buildJumpto();
-		Dialog.open(...args);
-	}
-
-	// [DEPRECATED]
-	function openShare(/* options, closeFn */ ...args) {
-		buildShare();
-		Dialog.open(...args);
-	}
-
-
-	/*******************************************************************************
 		Object Exports.
 	*******************************************************************************/
 
@@ -865,13 +744,6 @@ var UI = (() => { // eslint-disable-line no-unused-vars, no-var
 		alert    : { value : openAlert },
 		restart  : { value : openRestart },
 		saves    : { value : openSaves },
-		settings : { value : openSettings },
-
-		// Deprecated Functions.
-		buildAutoload : { value : buildAutoload },
-		buildJumpto   : { value : buildJumpto },
-		buildShare    : { value : buildShare },
-		jumpto        : { value : openJumpto },
-		share         : { value : openShare }
+		settings : { value : openSettings }
 	}));
 })();

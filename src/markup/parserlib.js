@@ -194,33 +194,6 @@
 									this.context = this.context.parent;
 								}
 							}
-
-							/*
-								[DEPRECATED] Old-style/legacy macros.
-							*/
-							else {
-								console.warn(`[DEPRECATED] The legacy macro API, used by <<${name}>>, is deprecated.`);
-
-								/*
-									Set up the raw arguments string.
-								*/
-								const prevRawArgs = w._rawArgs;
-								w._rawArgs = rawArgs;
-
-								/*
-									Call the handler.
-
-									NOTE: There's no catch clause here because this try/finally exists solely
-									to ensure that the previous raw arguments string is properly restored in
-									the event that an uncaught exception is thrown during the handler call.
-								*/
-								try {
-									macro.handler(w.output, name, args, w, payload);
-								}
-								finally {
-									w._rawArgs = prevRawArgs;
-								}
-							}
 						}
 						else {
 							return appendError(

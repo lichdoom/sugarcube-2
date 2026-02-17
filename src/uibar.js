@@ -350,26 +350,6 @@ var UIBar = (() => { // eslint-disable-line no-unused-vars, no-var
 
 
 	/*******************************************************************************
-		Deprecated Functions.
-	*******************************************************************************/
-
-	// [DEPRECATED]
-	function update() {
-		if (BUILD_DEBUG) { console.log('[UIBar/update()]'); }
-
-		console.warn('[DEPRECATED] UIBar.update() is deprecated.');
-
-		if (!_$uiBar) {
-			return;
-		}
-
-		UI.update();
-
-		return UIBar;
-	}
-
-
-	/*******************************************************************************
 		Object Exports.
 	*******************************************************************************/
 
@@ -385,10 +365,6 @@ var UIBar = (() => { // eslint-disable-line no-unused-vars, no-var
 		show     : { value : show },
 		start    : { value : start },
 		stow     : { value : stow },
-		unstow   : { value : unstow },
-
-		// Deprecated Functions.
-		setStoryElements : { value : update },
-		update           : { value : update }
+		unstow   : { value : unstow }
 	}));
 })();
