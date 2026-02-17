@@ -202,9 +202,6 @@ var UI = (() => { // eslint-disable-line no-unused-vars, no-var
 					.appendTo($tdDesc);
 				jQuery(document.createElement('div'))
 					.addClass('details')
-					/* legacy */
-					.addClass('datestamp')
-					/* /legacy */
 					.text(`${L10n.get('savesTextBrowserAuto')}\u00a0${index + 1}\u00a0\u00a0\u2022\u00a0\u00a0`)
 					.append(
 						info.date
@@ -288,9 +285,6 @@ var UI = (() => { // eslint-disable-line no-unused-vars, no-var
 						.appendTo($tdDesc);
 					jQuery(document.createElement('div'))
 						.addClass('details')
-						/* legacy */
-						.addClass('datestamp')
-						/* /legacy */
 						.text(`${L10n.get('savesTextBrowserSlot')}\u00a0${index + 1}\u00a0\u00a0\u2022\u00a0\u00a0`)
 						.append(
 							info.date
@@ -339,9 +333,6 @@ var UI = (() => { // eslint-disable-line no-unused-vars, no-var
 						.appendTo($tdDesc);
 					jQuery(document.createElement('div'))
 						.addClass('details')
-						/* legacy */
-						.addClass('datestamp')
-						/* /legacy */
 						.text(`${L10n.get('savesTextBrowserSlot')}\u00a0${index + 1}`)
 						.appendTo($tdDesc);
 

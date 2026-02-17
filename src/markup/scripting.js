@@ -677,11 +677,6 @@ var Scripting = (() => { // eslint-disable-line no-unused-vars, no-var
 	return Object.preventExtensions(Object.create(null, {
 		desugar         : { value : desugar },
 		evalJavaScript  : { value : evalJavaScript },
-		evalTwineScript : { value : evalTwineScript },
-
-		/*
-			Legacy Functions.
-		*/
-		parse : { value : desugar }
+		evalTwineScript : { value : evalTwineScript }
 	}));
 })();
