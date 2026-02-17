@@ -6,7 +6,7 @@
 	Use of this source code is governed by a BSD 2-clause "Simplified" License, which may be found in the LICENSE file.
 
 ***********************************************************************************************************************/
-/* global Config, L10n, State, Wikifier, createSlug, decodeEntities, encodeMarkup, enumFrom */
+/* global Config, L10n, Wikifier, createSlug, decodeEntities, encodeMarkup, enumFrom */
 
 var Passage = (() => { // eslint-disable-line no-unused-vars, no-var
 	/*
@@ -134,16 +134,7 @@ var Passage = (() => { // eslint-disable-line no-unused-vars, no-var
 							.filter(tag => !tagsToSkip.test(tag))
 							.map(tag => createSlug(tag))
 					)())
-				},
-
-				/* legacy */
-				domId : {
-					get() { return this.id; }
-				},
-				title : {
-					get() { return this.name; }
 				}
-				/* /legacy */
 			});
 		}
 
@@ -200,12 +191,6 @@ var Passage = (() => { // eslint-disable-line no-unused-vars, no-var
 			new Wikifier(frag, this.processText(), options);
 			return frag;
 		}
-
-		/* legacy */
-		description() { // eslint-disable-line class-methods-use-this
-			return `${L10n.get('textTurn')} ${State.turns}`;
-		}
-		/* /legacy */
 	}
 
 

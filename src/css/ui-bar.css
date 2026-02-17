@@ -161,9 +161,7 @@ button#ui-bar-toggle {
 }
 #menu-item-continue a::before,
 #menu-item-saves a::before,
-#menu-item-settings a::before,
-#menu-item-restart a::before /* legacy */,
-#menu-item-share a::before /* /legacy */ {
+#menu-item-settings a::before {
 	margin-right: 0.35em;
 }
 #menu-item-continue a::before {
@@ -178,11 +176,6 @@ button#ui-bar-toggle {
 #menu-item-restart a::before {
 	content: "\f011";
 }
-/* legacy */
-#menu-item-share a::before {
-	content: "\f1e0";
-}
-/* legacy */
 
 /* Accessibility styles. */
 @media (prefers-reduced-motion: reduce) {

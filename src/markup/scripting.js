@@ -6,27 +6,10 @@
 	Use of this source code is governed by a BSD 2-clause "Simplified" License, which may be found in the LICENSE file.
 
 ***********************************************************************************************************************/
-/* global Engine, Patterns, State, Story, enumFrom, getTypeOf, now, parseURL, stringFrom */
+/* global Engine, Patterns, State, Story, enumFrom, getTypeOf, now, parseURL */
 
 var Scripting = (() => { // eslint-disable-line no-unused-vars, no-var
 	/* eslint-disable no-unused-vars */
-
-	/*******************************************************************************
-		Deprecated Legacy Functions.
-	*******************************************************************************/
-
-	/*
-		[DEPRECATED] Returns the simple string representation of the passed value or,
-		if there is none, the passed default value.
-
-		NOTE: Unused, included only for compatibility.
-	*/
-	function toStringOrDefault(value /* , defValue */) {
-		console.warn('[DEPRECATED] toStringOrDefault() is deprecated.');
-
-		return stringFrom(value);
-	}
-
 
 	/*******************************************************************************
 		User Functions.
@@ -130,20 +113,8 @@ var Scripting = (() => { // eslint-disable-line no-unused-vars, no-var
 		match that of the active passage or the one at the optional offset, or an empty string,
 		if there is no such passage.
 	*/
-	function previous(/* legacy: offset */) {
+	function previous() {
 		const passages = State.passages;
-
-		/* legacy: behavior with an offset */
-		if (arguments.length > 0) {
-			const offset = Number(arguments[0]);
-
-			if (!Number.isSafeInteger(offset) || offset < 1) {
-				throw new RangeError('previous offset parameter must be a positive integer greater than zero');
-			}
-
-			return passages.length > offset ? passages[passages.length - 1 - offset] : '';
-		}
-		/* /legacy */
 
 		for (let i = passages.length - 2; i >= 0; --i) {
 			if (passages[i] !== State.passage) {

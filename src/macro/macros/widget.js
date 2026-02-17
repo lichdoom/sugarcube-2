@@ -56,17 +56,6 @@ Macro.add('widget', {
 							this.addShadow('_contents');
 						}
 
-						/* legacy */
-						// Cache the existing value of the `$args` variable, if necessary.
-						if (Object.hasOwn(State.variables, 'args')) {
-							shadowStore.$args = State.variables.args;
-						}
-
-						// Set up the widget `$args` variable and add a shadow.
-						State.variables.args = State.temporary.args;
-						this.addShadow('$args');
-						/* /legacy */
-
 						try {
 							// Set up the error trapping variables.
 							const resFrag = document.createDocumentFragment();
@@ -108,16 +97,6 @@ Macro.add('widget', {
 									delete State.temporary.contents;
 								}
 							}
-
-							/* legacy */
-							// Revert the `$args` variable shadowing.
-							if (Object.hasOwn(shadowStore, '$args')) {
-								State.variables.args = shadowStore.$args;
-							}
-							else {
-								delete State.variables.args;
-							}
-							/* /legacy */
 						}
 					};
 				})(this.payload[0].contents)

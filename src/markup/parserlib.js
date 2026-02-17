@@ -371,11 +371,6 @@
 
 				return typeof sa === 'boolean' && sa || Array.isArray(sa) && sa.includes(tagName);
 			}
-			/* legacy */
-			else if (typeof macro.skipArg0 !== 'undefined') {
-				return macro.skipArg0 && macro.name === tagName;
-			}
-			/* /legacy */
 
 			return false;
 		},

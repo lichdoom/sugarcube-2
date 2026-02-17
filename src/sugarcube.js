@@ -80,10 +80,7 @@ var version = (() => { // eslint-disable-line no-unused-vars, no-var
 				const prerelease = this.prerelease ? `-${this.prerelease}` : '';
 				return `${this.major}.${this.minor}.${this.patch}${prerelease}+${this.build}`;
 			}
-		},
-
-		// Legacy.
-		title : { value : name }
+		}
 	}));
 })();
 
@@ -105,17 +102,6 @@ var setup = {};
 
 // Persistant storage manager object.
 var storage = null;
-
-/*
-	Legacy variables.
-*/
-var macros = {};      // Legacy macros object.
-var postdisplay = {}; // Post-display task callbacks object.
-var postrender = {};  // Post-render task callbacks object.
-var predisplay = {};  // Pre-display task callbacks object.
-var prehistory = {};  // Pre-history task callbacks object.
-var prerender = {};   // Pre-render task callbacks object.
-/* eslint-enable no-unused-vars */
 
 /*
 	Global `SugarCube` object.  Allows scripts to detect if they're running in SugarCube by

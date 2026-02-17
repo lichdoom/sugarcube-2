@@ -8,8 +8,7 @@
 ***********************************************************************************************************************/
 /*
 	global Alert, Config, DebugView, Dialog, Has, LoadScreen, Save, Scripting, State, Story, StyleWrapper, UI,
-	       UIBar, Wikifier, enumFrom, getErrorMessage, now, postdisplay, postrender, predisplay, prehistory,
-	       prerender, triggerEvent
+	       UIBar, Wikifier, enumFrom, getErrorMessage, now, triggerEvent
 */
 
 var Engine = (() => { // eslint-disable-line no-unused-vars, no-var
@@ -491,18 +490,9 @@ var Engine = (() => { // eslint-disable-line no-unused-vars, no-var
 
 		// Execute the pre-history events and tasks.
 		jQuery.event.trigger({
-			/* legacy */
-			passage,
-			/* /legacy */
-
 			type   : ':passageinit',
 			detail : {
 				passage
-			}
-		});
-		Object.keys(prehistory).forEach(task => {
-			if (typeof prehistory[task] === 'function') {
-				prehistory[task].call(passage, task);
 			}
 		});
 
@@ -522,13 +512,6 @@ var Engine = (() => { // eslint-disable-line no-unused-vars, no-var
 		// though the likelihood of it being needed this early is low.  This
 		// will be updated again later at the end.
 		_lastPlay = now();
-
-		// Execute pre-display tasks and the `PassageReady` special passage.
-		Object.keys(predisplay).forEach(task => {
-			if (typeof predisplay[task] === 'function') {
-				predisplay[task].call(passage, task);
-			}
-		});
 
 		if (Story.has('PassageReady')) {
 			try {
@@ -567,20 +550,10 @@ var Engine = (() => { // eslint-disable-line no-unused-vars, no-var
 
 		// Execute pre-render events and tasks.
 		jQuery.event.trigger({
-			/* legacy */
-			content : passageEl,
-			passage,
-			/* /legacy */
-
 			type   : ':passagestart',
 			detail : {
 				content : passageEl,
 				passage
-			}
-		});
-		Object.keys(prerender).forEach(task => {
-			if (typeof prerender[task] === 'function') {
-				prerender[task].call(passage, passageEl, task);
 			}
 		});
 
@@ -599,20 +572,10 @@ var Engine = (() => { // eslint-disable-line no-unused-vars, no-var
 
 		// Execute post-render events and tasks.
 		jQuery.event.trigger({
-			/* legacy */
-			content : passageEl,
-			passage,
-			/* /legacy */
-
 			type   : ':passagerender',
 			detail : {
 				content : passageEl,
 				passage
-			}
-		});
-		Object.keys(postrender).forEach(task => {
-			if (typeof postrender[task] === 'function') {
-				postrender[task].call(passage, passageEl, task);
 			}
 		});
 
@@ -690,20 +653,10 @@ var Engine = (() => { // eslint-disable-line no-unused-vars, no-var
 		}
 
 		jQuery.event.trigger({
-			/* legacy */
-			content : passageEl,
-			passage,
-			/* /legacy */
-
 			type   : ':passagedisplay',
 			detail : {
 				content : passageEl,
 				passage
-			}
-		});
-		Object.keys(postdisplay).forEach(task => {
-			if (typeof postdisplay[task] === 'function') {
-				postdisplay[task].call(passage, task);
 			}
 		});
 
@@ -761,11 +714,6 @@ var Engine = (() => { // eslint-disable-line no-unused-vars, no-var
 
 		// Execute post-play events.
 		jQuery.event.trigger({
-			/* legacy */
-			content : passageEl,
-			passage,
-			/* /legacy */
-
 			type   : ':passageend',
 			detail : {
 				content : passageEl,

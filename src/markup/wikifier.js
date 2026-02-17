@@ -821,12 +821,6 @@ var Wikifier = (() => { // eslint-disable-line no-unused-vars, no-var
 			})()
 		},
 
-		/* legacy */
-		// createShadowSetterCallback : {
-		// 	value : Wikifier.helpers.shadowHandler
-		// },
-		/* /legacy */
-
 		parseSquareBracketedMarkup : {
 			value : (() => {
 				/* eslint-disable no-param-reassign */

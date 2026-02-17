@@ -89,7 +89,6 @@ var Serial = (() => { // eslint-disable-line no-unused-vars, no-var
 						value = new Date(value[1]);
 						break;
 
-					case '(revive:eval)': /* legacy */
 					case '(revive:)': {
 						try {
 							const $ReviveData$ = value[1][1]; // eslint-disable-line no-unused-vars
