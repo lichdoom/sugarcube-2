@@ -23,7 +23,6 @@ const CONFIG = {
 			// The ordering herein is significant.
 			'src/lib/alert.js',
 			'src/lib/patterns.js',
-			'src/extensions/ecmascript-polyfills.js',
 			'src/extensions/ecmascript-extensions.js',
 			'src/extensions/jquery/',
 			'src/lib/browser.js',
@@ -171,7 +170,7 @@ const _opts = require('commander')
 	.parse()
 	.opts();
 
-let _buildForTwine1 = true;
+let _buildForTwine1 = false;
 let _buildForTwine2 = true;
 
 if (_opts.build) {
