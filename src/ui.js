@@ -19,10 +19,6 @@ var UI = (() => { // eslint-disable-line no-unused-vars, no-var
 	function assembleLinkList(passage, listEl) {
 		let list = listEl;
 
-		// Cache the value of `Config.debug`, then disable it during this method's run.
-		const debugState = Config.debug;
-		Config.debug = false;
-
 		try {
 			if (list == null) { // lazy equality for null
 				list = document.createElement('ul');
@@ -58,16 +54,12 @@ var UI = (() => { // eslint-disable-line no-unused-vars, no-var
 			}
 		}
 		finally {
-			// Restore `Config.debug` to its original value.
-			Config.debug = debugState;
 		}
 
 		return list;
 	}
 
 	function buildRestart() {
-		if (BUILD_DEBUG) { console.log('[UI/buildRestart()]'); }
-
 		Dialog
 			.create(L10n.get('restartTitle'), 'restart')
 			.append(
@@ -374,8 +366,6 @@ var UI = (() => { // eslint-disable-line no-unused-vars, no-var
 				.append($tbody);
 		}
 
-		if (BUILD_DEBUG) { console.log('[UI/buildSaves()]'); }
-
 		const browserEnabled = Save.browser.isEnabled();
 
 		// Bail out if both saves and the file API are disabled/missing.
@@ -492,8 +482,6 @@ var UI = (() => { // eslint-disable-line no-unused-vars, no-var
 	}
 
 	function buildSettings() {
-		if (BUILD_DEBUG) { console.log('[UI/buildSettings()]'); }
-
 		Dialog.create(L10n.get('settingsTitle'), 'settings');
 		const $dialogBody = jQuery(Dialog.body());
 

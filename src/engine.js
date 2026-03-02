@@ -7,7 +7,7 @@
 
 ***********************************************************************************************************************/
 /*
-	global Alert, Config, DebugView, Dialog, Has, LoadScreen, Save, Scripting, State, Story, StyleWrapper, UI,
+	global Alert, Config, Dialog, Has, LoadScreen, Save, Scripting, State, Story, StyleWrapper, UI,
 	       UIBar, Wikifier, enumFrom, getErrorMessage, now, triggerEvent
 */
 
@@ -22,9 +22,6 @@ var Engine = (() => { // eslint-disable-line no-unused-vars, no-var
 
 	// Minimum delay for DOM actions (in milliseconds).
 	const DOM_DELAY = 40;
-
-	// Cache of the debug view(s) for initialization special passage(s).
-	const _initDebugViews = [];
 
 	// Current state of the engine.
 	let _state = States.Init;
@@ -44,8 +41,6 @@ var Engine = (() => { // eslint-disable-line no-unused-vars, no-var
 		Initialize the core story elements and perform some bookkeeping.
 	*/
 	function engineInit() {
-		if (BUILD_DEBUG) { console.log('[Engine/engineInit()]'); }
-
 		if (_state !== States.Init) {
 			return;
 		}
@@ -158,8 +153,6 @@ var Engine = (() => { // eslint-disable-line no-unused-vars, no-var
 		Run user scripts (user stylesheet, JavaScript, and widgets).
 	*/
 	function engineRunUserScripts() {
-		if (BUILD_DEBUG) { console.log('[Engine/engineRunUserScripts()]'); }
-
 		if (_state !== States.Init) {
 			return;
 		}
@@ -206,8 +199,6 @@ var Engine = (() => { // eslint-disable-line no-unused-vars, no-var
 		Run the user init passages.
 	*/
 	function engineRunUserInit() {
-		if (BUILD_DEBUG) { console.log('[Engine/engineRunUserInit()]'); }
-
 		if (_state !== States.Init) {
 			return;
 		}
@@ -217,19 +208,7 @@ var Engine = (() => { // eslint-disable-line no-unused-vars, no-var
 		*/
 		Story.getInits().forEach(passage => {
 			try {
-				const debugBuffer = Wikifier.wikifyEval(passage.text);
-
-				if (Config.debug) {
-					const debugView = new DebugView(
-						document.createDocumentFragment(),
-						'special',
-						`${passage.name} [init-tagged]`,
-						`${passage.name} [init-tagged]`
-					);
-					debugView.modes({ hidden : true });
-					debugView.append(debugBuffer);
-					_initDebugViews.push(debugView.output);
-				}
+				Wikifier.wikifyEval(passage.text);
 			}
 			catch (ex) {
 				console.error(ex);
@@ -242,19 +221,7 @@ var Engine = (() => { // eslint-disable-line no-unused-vars, no-var
 		*/
 		if (Story.has('StoryInit')) {
 			try {
-				const debugBuffer = Wikifier.wikifyEval(Story.get('StoryInit').text);
-
-				if (Config.debug) {
-					const debugView = new DebugView(
-						document.createDocumentFragment(),
-						'special',
-						'StoryInit',
-						'StoryInit'
-					);
-					debugView.modes({ hidden : true });
-					debugView.append(debugBuffer);
-					_initDebugViews.push(debugView.output);
-				}
+				Wikifier.wikifyEval(Story.get('StoryInit').text);
 			}
 			catch (ex) {
 				console.error(ex);
@@ -267,8 +234,6 @@ var Engine = (() => { // eslint-disable-line no-unused-vars, no-var
 		Starts the story.
 	*/
 	function engineStart() {
-		if (BUILD_DEBUG) { console.log('[Engine/engineStart()]'); }
-
 		if (_state !== States.Init) {
 			return;
 		}
@@ -317,14 +282,10 @@ var Engine = (() => { // eslint-disable-line no-unused-vars, no-var
 					reject(); // eslint-disable-line prefer-promise-reject-errors
 				})
 					.then(() => {
-						if (BUILD_DEBUG) { console.log('\tattempting autoload of browser continue'); }
-
 						Save.browser.continue();
 						engineShow();
 					})
 					.catch(() => {
-						if (BUILD_DEBUG) { console.log(`\tstarting passage: "${Config.passages.start}"`); }
-
 						enginePlay(Config.passages.start);
 					});
 			}
@@ -335,8 +296,6 @@ var Engine = (() => { // eslint-disable-line no-unused-vars, no-var
 		Restarts the story.
 	*/
 	function engineRestart() {
-		if (BUILD_DEBUG) { console.log('[Engine/engineRestart()]'); }
-
 		// Show the loading screen to hide any unsightly rendering shenanigans
 		// during the page reload.
 		LoadScreen.show();
@@ -453,8 +412,6 @@ var Engine = (() => { // eslint-disable-line no-unused-vars, no-var
 			return false;
 		}
 
-		if (BUILD_DEBUG) { console.log(`[Engine/enginePlay(title: "${title}", noHistory: ${noHistory})]`); }
-
 		let passageTitle = title;
 
 		// Update the engine state.
@@ -463,10 +420,6 @@ var Engine = (() => { // eslint-disable-line no-unused-vars, no-var
 		// Reset the temporary state and variables objects.
 		TempState = {}; // eslint-disable-line no-undef
 		State.clearTemporary();
-
-		// Debug view setup.
-		let passageReadyOutput;
-		let passageDoneOutput;
 
 		// Execute the navigation override callback.
 		if (typeof Config.navigation.override === 'function') {
@@ -515,7 +468,7 @@ var Engine = (() => { // eslint-disable-line no-unused-vars, no-var
 
 		if (Story.has('PassageReady')) {
 			try {
-				passageReadyOutput = Wikifier.wikifyEval(Story.get('PassageReady').text);
+				Wikifier.wikifyEval(Story.get('PassageReady').text);
 			}
 			catch (ex) {
 				console.error(ex);
@@ -644,7 +597,7 @@ var Engine = (() => { // eslint-disable-line no-unused-vars, no-var
 		// Execute post-display events, tasks, and the `PassageDone` special passage.
 		if (Story.has('PassageDone')) {
 			try {
-				passageDoneOutput = Wikifier.wikifyEval(Story.get('PassageDone').text);
+				Wikifier.wikifyEval(Story.get('PassageDone').text);
 			}
 			catch (ex) {
 				console.error(ex);
@@ -662,43 +615,6 @@ var Engine = (() => { // eslint-disable-line no-unused-vars, no-var
 
 		// Execute UI update events.
 		UI.update();
-
-		// Add the completed debug views for `StoryInit`, `PassageReady`, and `PassageDone`
-		// to the incoming passage element.
-		if (Config.debug) {
-			let debugView;
-
-			// Prepend the `PassageReady` debug view.
-			if (passageReadyOutput != null) { // lazy equality for null
-				debugView = new DebugView(
-					document.createDocumentFragment(),
-					'special',
-					'PassageReady',
-					'PassageReady'
-				);
-				debugView.modes({ hidden : true });
-				debugView.append(passageReadyOutput);
-				jQuery(passageEl).prepend(debugView.output);
-			}
-
-			// Append the `PassageDone` debug view.
-			if (passageDoneOutput != null) { // lazy equality for null
-				debugView = new DebugView(
-					document.createDocumentFragment(),
-					'special',
-					'PassageDone',
-					'PassageDone'
-				);
-				debugView.modes({ hidden : true });
-				debugView.append(passageDoneOutput);
-				jQuery(passageEl).append(debugView.output);
-			}
-
-			// Prepend the cached initialization debug views, if we're showing the first moment/turn.
-			if (State.turns === 1 && _initDebugViews.length > 0) {
-				jQuery(passageEl).prepend(_initDebugViews);
-			}
-		}
 
 		// Last second post-processing for accessibility and other things.
 		jQuery('#story')

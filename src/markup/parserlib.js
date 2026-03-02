@@ -7,7 +7,7 @@
 
 ***********************************************************************************************************************/
 /*
-	global Config, DebugView, EOF, Engine, Lexer, Macro, MacroContext, Patterns, Scripting, State, Story, Template,
+	global Config, EOF, Engine, Lexer, Macro, MacroContext, Patterns, Scripting, State, Story, Template,
 	       Wikifier, stringFrom, appendError
 */
 /* eslint "no-param-reassign": [ 2, { "props" : false } ] */
@@ -739,10 +739,7 @@
 				: null;
 
 			// Debug view setup.
-			const output = (Config.debug
-				? new DebugView(w.output, 'link-markup', '[[link]]', w.source.slice(w.matchStart, w.nextMatch))
-				: w
-			).output;
+			const output = w.output;
 
 			if (markup.forceInternal || !Wikifier.isExternalLink(link)) {
 				Wikifier.createInternalLink(output, link, text, setFn);
@@ -778,24 +775,11 @@
 
 			w.nextMatch = markup.pos;
 
-			// Debug view setup.
-			let debugView;
-
-			if (Config.debug) {
-				debugView = new DebugView(
-					w.output,
-					'image-markup',
-					Object.hasOwn(markup, 'link') ? '[img[][link]]' : '[img[]]',
-					w.source.slice(w.matchStart, w.nextMatch)
-				);
-				debugView.modes({ block : true });
-			}
-
 			// align=(left|right), title=(title), source=source, forceInternal=(~), link=(link), setter=(setter)
 			const setFn = Object.hasOwn(markup, 'setter')
 				? Wikifier.helpers.shadowHandler(Scripting.desugar(markup.setter))
 				: null;
-			let el     = (Config.debug ? debugView : w).output;
+			let el     = w.output;
 			let source;
 
 			if (Object.hasOwn(markup, 'link')) {
@@ -1027,13 +1011,7 @@
 				jQuery(document.createTextNode(w.matchText)).appendTo(w.output);
 			}
 			else {
-				new Wikifier(
-					(Config.debug
-						? new DebugView(w.output, 'variable', w.matchText, w.matchText) // Debug view setup.
-						: w
-					).output,
-					stringFrom(result)
-				);
+				new Wikifier(w.output, stringFrom(result));
 			}
 		}
 	});
@@ -1077,13 +1055,7 @@
 				jQuery(document.createTextNode(w.matchText)).appendTo(w.output);
 			}
 			else {
-				new Wikifier(
-					(Config.debug
-						? new DebugView(w.output, 'template', w.matchText, w.matchText) // Debug view setup.
-						: w
-					).output,
-					result
-				);
+				new Wikifier(w.output, result);
 			}
 		}
 	});
@@ -1671,9 +1643,8 @@
 				}
 
 				if (isVoid || terminatorMatch) {
-					let output    = w.output;
+					const output    = w.output;
 					let el        = document.createElement(w.output.tagName);
-					let debugView;
 
 					el.innerHTML = w.matchText;
 
@@ -1706,21 +1677,6 @@
 						}
 
 						this.processDataAttributes(el, tagName);
-
-						// Debug view setup.
-						if (Config.debug) {
-							debugView = new DebugView(
-								w.output,
-								`html-${tagName}`,
-								tagName,
-								w.matchText
-							);
-							debugView.modes({
-								block   : tagName === 'img',
-								nonvoid : terminatorMatch
-							});
-							output = debugView.output;
-						}
 					}
 					else if (el.hasAttribute('href')) {
 						// WARNING: Do not replace `el.getAttribute('href')` with `el.href`.
@@ -1742,15 +1698,6 @@
 						}
 						finally {
 							Wikifier.Option.pop();
-						}
-
-						/*
-							Debug view modification.  If the current element has any debug
-							view descendants who have "block" mode set, then set its debug
-							view to the same.  It just makes things look a bit nicer.
-						*/
-						if (debugView && jQuery(el).find('.debug.block').length > 0) {
-							debugView.modes({ block : true });
 						}
 					}
 

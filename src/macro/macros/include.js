@@ -6,7 +6,7 @@
 	Use of this source code is governed by a BSD 2-clause "Simplified" License, which may be found in the LICENSE file.
 
 ***********************************************************************************************************************/
-/* global Config, Macro, Story */
+/* global Macro, Story */
 
 /*
 	<<include>>
@@ -30,11 +30,6 @@ Macro.add('include', {
 
 		if (!Story.has(passage)) {
 			return this.error(`passage "${passage}" does not exist`);
-		}
-
-		// Custom debug view setup.
-		if (Config.debug) {
-			this.debugView.modes({ block : true });
 		}
 
 		passage = Story.get(passage);

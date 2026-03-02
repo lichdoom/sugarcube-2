@@ -47,8 +47,6 @@ var Save = (() => { // eslint-disable-line no-unused-vars, no-var
 		Initialize the saves subsystem.
 	*/
 	function init() {
-		if (BUILD_DEBUG) { console.log('[Save/init()]'); }
-
 		return true;
 	}
 
@@ -803,8 +801,6 @@ var Save = (() => { // eslint-disable-line no-unused-vars, no-var
 	*******************************************************************************/
 
 	function marshal(details) {
-		if (BUILD_DEBUG) { console.log(`[Save/marshal({ type : "${details.type}" })]`); }
-
 		const save = Object.assign({}, details, {
 			date  : Date.now(),
 			id    : Config.saves.id,
@@ -829,8 +825,6 @@ var Save = (() => { // eslint-disable-line no-unused-vars, no-var
 	}
 
 	function unmarshal(save) {
-		if (BUILD_DEBUG) { console.log('[Save/unmarshal()]'); }
-
 		if (
 			save == null // lazy equality for null
 			|| typeof save !== 'object'

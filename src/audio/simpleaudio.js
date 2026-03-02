@@ -1489,11 +1489,6 @@ var SimpleAudio = (() => { // eslint-disable-line no-unused-vars, no-var
 			throw new Error(`${what}: error during track initialization: ${ex.message}`);
 		}
 
-		// If in Test Mode and no supported sources were specified, throw an error.
-		if (Config.debug && !track.hasSource()) {
-			throw new Error(`${what}: no supported audio sources found`);
-		}
-
 		// If a track by the given ID already exists, destroy it.
 		if (_tracks.has(id)) {
 			_tracks.get(id)._destroy();
@@ -1698,11 +1693,6 @@ var SimpleAudio = (() => { // eslint-disable-line no-unused-vars, no-var
 					}
 					catch (ex) {
 						throw new Error(`error during track initialization: ${ex.message}`);
-					}
-
-					// If in Test Mode and no supported sources were specified, return an error.
-					if (Config.debug && !track.hasSource()) {
-						throw new Error('no supported audio sources found');
 					}
 				}
 

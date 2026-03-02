@@ -6,7 +6,7 @@
 	Use of this source code is governed by a BSD 2-clause "Simplified" License, which may be found in the LICENSE file.
 
 ***********************************************************************************************************************/
-/* global Config, Engine, Macro */
+/* global Engine, Macro */
 
 /*
 	<<append>>, <<prepend>>, & <<replace>>
@@ -57,11 +57,6 @@ Macro.add(['append', 'prepend', 'replace'], {
 		}
 		else if (this.name === 'replace') {
 			$targets.empty();
-		}
-
-		// Custom debug view setup.
-		if (Config.debug) {
-			this.debugView.modes({ hidden : true });
 		}
 	}
 });

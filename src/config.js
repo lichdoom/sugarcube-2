@@ -12,8 +12,6 @@ var Config = (() => { // eslint-disable-line no-unused-vars, no-var
 	// General settings.
 	let _addVisitedLinkClass     = false;
 	let _cleanupWikifierOutput   = false;
-	let _debug                   = false;
-	let _enableOptionalDebugging = false;
 	let _loadDelay               = 0;
 
 	// Audio settings.
@@ -62,12 +60,6 @@ var Config = (() => { // eslint-disable-line no-unused-vars, no-var
 
 		get cleanupWikifierOutput() { return _cleanupWikifierOutput; },
 		set cleanupWikifierOutput(value) { _cleanupWikifierOutput = Boolean(value); },
-
-		get debug() { return _debug; },
-		set debug(value) { _debug = Boolean(value); },
-
-		get enableOptionalDebugging() { return _enableOptionalDebugging; },
-		set enableOptionalDebugging(value) { _enableOptionalDebugging = Boolean(value); },
 
 		get loadDelay() { return _loadDelay; },
 		set loadDelay(value) {

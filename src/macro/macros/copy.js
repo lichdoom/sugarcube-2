@@ -6,7 +6,7 @@
 	Use of this source code is governed by a BSD 2-clause "Simplified" License, which may be found in the LICENSE file.
 
 ***********************************************************************************************************************/
-/* global Config, Macro */
+/* global Macro */
 
 /*
 	<<copy>>
@@ -24,10 +24,5 @@ Macro.add('copy', {
 		}
 
 		jQuery(this.output).append($targets.html());
-
-		// Custom debug view setup.
-		if (Config.debug) {
-			this.debugView.modes({ hidden : true });
-		}
 	}
 });

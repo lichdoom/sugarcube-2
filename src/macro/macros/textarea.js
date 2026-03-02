@@ -6,7 +6,7 @@
 	Use of this source code is governed by a BSD 2-clause "Simplified" License, which may be found in the LICENSE file.
 
 ***********************************************************************************************************************/
-/* global Config, Engine, Macro, State, createSlug */
+/* global Engine, Macro, State, createSlug */
 
 /*
 	<<textarea>>
@@ -32,11 +32,6 @@ Macro.add('textarea', {
 		// Try to ensure that we receive the variable's name (incl. sigil), not its value.
 		if (varName[0] !== '$' && varName[0] !== '_') {
 			return this.error(`variable name "${this.args[0]}" is missing its sigil ($ or _)`);
-		}
-
-		// Custom debug view setup.
-		if (Config.debug) {
-			this.debugView.modes({ block : true });
 		}
 
 		const varId        = createSlug(varName);

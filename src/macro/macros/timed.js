@@ -6,7 +6,7 @@
 	Use of this source code is governed by a BSD 2-clause "Simplified" License, which may be found in the LICENSE file.
 
 ***********************************************************************************************************************/
-/* global Config, DebugView, Engine, Macro, State, Wikifier, cssTimeToMS */
+/* global Engine, Macro, State, Wikifier, cssTimeToMS */
 
 /*
 	<<timed>> & <<next>>
@@ -58,11 +58,6 @@ Macro.add('timed', {
 			}
 		}
 
-		// Custom debug view setup.
-		if (Config.debug) {
-			this.debugView.modes({ block : true });
-		}
-
 		const transition = this.args.length > 1 && this.self.t8nRe.test(this.args[1]);
 		const $wrapper   = jQuery(document.createElement('span'))
 			.addClass(`macro-${this.name}`)
@@ -75,16 +70,6 @@ Macro.add('timed', {
 
 			// Output.
 			let $output = $wrapper;
-
-			// Custom debug view setup for `<<next>>`.
-			if (Config.debug && item.name === 'next') {
-				$output = jQuery(new DebugView( // eslint-disable-line no-param-reassign
-					$output[0],
-					'macro',
-					item.name,
-					item.source
-				).output);
-			}
 
 			if (transition) {
 				$output = jQuery(document.createElement('span'))

@@ -6,7 +6,7 @@
 	Use of this source code is governed by a BSD 2-clause "Simplified" License, which may be found in the LICENSE file.
 
 ***********************************************************************************************************************/
-/* global Config, L10n, Wikifier, createSlug, decodeEntities, encodeMarkup, enumFrom */
+/* global Config, L10n, Wikifier, createSlug, decodeEntities, encodeMarkup */
 
 var Passage = (() => { // eslint-disable-line no-unused-vars, no-var
 	/*
@@ -14,77 +14,32 @@ var Passage = (() => { // eslint-disable-line no-unused-vars, no-var
 			debug      → special tag
 			nobr       → special tag
 			passage    → the default class
-			script     → special tag (only in Twine 1)
-			stylesheet → special tag (only in Twine 1)
 			twine.*    → special tag
 			widget     → special tag
 	*/
-	let tagsToSkip;
+	const tagsToSkip = /^(?:debug|nobr|passage|widget|twine\..*)$/i;
 
 	// Passage store text content decoding function.
-	let decodePassageText;
+	const decodePassageText = (() => {
+		const encodedRE    = /\r/g;
+		const hasEncodedRE = new RegExp(encodedRE.source); // to drop the global flag
 
-	// For Twine 1.
-	if (BUILD_TWINE1) {
-		tagsToSkip = /^(?:debug|nobr|passage|script|stylesheet|widget|twine\..*)$/i;
-
-		decodePassageText = (() => {
-			const encodedMap   = enumFrom({
-				'\\n' : '\n',
-				'\\t' : '\t',
-				'\\s' : '\\',
-				'\\'  : '\\',
-				'\r'  : ''
-			});
-			const encodedRE    = new RegExp(`(?:${
-				Object.keys(encodedMap)
-					.map(ch => RegExp.escape(ch))
-					.join('|')
-			})`, 'g');
-			const hasEncodedRE = new RegExp(encodedRE.source); // to drop the global flag
-
-			/*
-				Returns a decoded version of the passed Twine 1 passage store encoded string.
-			*/
-			function decodePassageText(str) {
-				if (str == null) { // lazy equality for null
-					return '';
-				}
-
-				const val = String(str);
-				return val && hasEncodedRE.test(val)
-					? val.replace(encodedRE, esc => encodedMap[esc])
-					: val;
+		/*
+			Returns a decoded version of the passed Twine 2 passage store encoded string.
+		*/
+		function decodePassageText(str) {
+			if (str == null) { // lazy equality for null
+				return '';
 			}
 
-			return decodePassageText;
-		})();
-	}
-	// For Twine 2.
-	else {
-		tagsToSkip = /^(?:debug|nobr|passage|widget|twine\..*)$/i;
+			const val = String(str);
+			return val && hasEncodedRE.test(val)
+				? val.replace(encodedRE, '')
+				: val;
+		}
 
-		decodePassageText = (() => {
-			const encodedRE    = /\r/g;
-			const hasEncodedRE = new RegExp(encodedRE.source); // to drop the global flag
-
-			/*
-				Returns a decoded version of the passed Twine 2 passage store encoded string.
-			*/
-			function decodePassageText(str) {
-				if (str == null) { // lazy equality for null
-					return '';
-				}
-
-				const val = String(str);
-				return val && hasEncodedRE.test(val)
-					? val.replace(encodedRE, '')
-					: val;
-			}
-
-			return decodePassageText;
-		})();
-	}
+		return decodePassageText;
+	})();
 
 
 	/*******************************************************************************

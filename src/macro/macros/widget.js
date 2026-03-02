@@ -6,7 +6,7 @@
 	Use of this source code is governed by a BSD 2-clause "Simplified" License, which may be found in the LICENSE file.
 
 ***********************************************************************************************************************/
-/* global Config, Macro, State, Wikifier */
+/* global Macro, State, Wikifier */
 
 /*
 	<<widget>>
@@ -107,11 +107,6 @@ Macro.add('widget', {
 			}
 
 			Macro.add(widgetName, widgetDef);
-
-			// Custom debug view setup.
-			if (Config.debug) {
-				this.debugView.modes({ hidden : true });
-			}
 		}
 		catch (ex) {
 			return this.error(`cannot create widget macro "${widgetName}": ${ex.message}`);

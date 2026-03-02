@@ -34,9 +34,6 @@ const CONFIG = {
 			'src/util/',
 			'src/storage/simplestore.js',
 			'src/storage/adapters/indexedDB.js',
-			// 'src/storage/adapters/webstorage.js',
-			// 'src/storage/adapters/cookie.js',
-			'src/lib/debugview.js',
 			'src/lib/nodetyper.js',
 			'src/lib/stylewrapper.js',
 			'src/l10n/l10n.js',
@@ -60,7 +57,6 @@ const CONFIG = {
 			'src/story.js',
 			'src/ui.js',
 			'src/uibar.js',
-			'src/debugbar.js',
 			'src/loadscreen.js',
 			'src/sugarcube.js'
 		],
@@ -84,9 +80,7 @@ const CONFIG = {
 			'src/css/ui-dialog.css',
 			'src/css/ui-dialog-saves.css',
 			'src/css/ui-dialog-settings.css',
-			'src/css/ui-bar.css',
-			'src/css/ui-debug-bar.css',
-			'src/css/ui-debug-views.css'
+			'src/css/ui-bar.css'
 		]
 	},
 	libs : [
@@ -102,22 +96,6 @@ const CONFIG = {
 		'vendor/seedrandom.min.js',
 		'vendor/console-hack.min.js'
 	],
-	twine1 : {
-		build : {
-			src  : 'template/twine1/html.tpl',
-			dest : 'build/twine1/sugarcube-2/header.html'
-		},
-		copy : [
-			{
-				src  : 'template/twine1/sugarcube-2.py',
-				dest : 'build/twine1/sugarcube-2/sugarcube-2.py'
-			},
-			{
-				src  : 'LICENSE',
-				dest : 'build/twine1/sugarcube-2/LICENSE'
-			}
-		]
-	},
 	twine2 : {
 		build : {
 			src  : 'template/twine2/html.tpl',
@@ -163,24 +141,16 @@ const _path = require('path');
 const _opts = require('commander')
 	.program
 	.option('-b, --build <version>', 'Build only for Twine major version: 1 or 2; default: build for all.')
-	.option('-d, --debug', 'Keep debugging code; gated by BUILD_DEBUG symbol.')
-	.option('-u, --unminified', 'Suppress minification stages.')
-	.option('-n, --notranspile', 'Suppress JavaScript transpilation stages.')
 	.helpOption('-h, --help', 'Print this help, then exit.')
 	.parse()
 	.opts();
 
-let _buildForTwine1 = false;
 let _buildForTwine2 = true;
 
 if (_opts.build) {
 	switch (_opts.build) {
 		case '1':
 			_buildForTwine2 = false;
-			break;
-
-		case '2':
-			_buildForTwine1 = false;
 			break;
 
 		default:
@@ -225,23 +195,6 @@ if (_opts.build) {
 			}
 		};
 	})();
-
-	// Build for Twine 1.x.
-	if (_buildForTwine1 && CONFIG.twine1) {
-		console.log('\nBuilding Twine 1.x version:');
-
-		// Process the header templates and write the outfiles.
-		projectBuild({
-			build     : CONFIG.twine1.build,
-			version   : version, // eslint-disable-line object-shorthand
-			libSource : assembleLibraries(CONFIG.libs),                        // combine the libraries
-			appSource : await compileJavaScript(CONFIG.js, { twine1 : true }), // combine and minify the app JS
-			cssSource : compileStyles(CONFIG.css)                              // combine and minify the app CSS
-		});
-
-		// Process the files that simply need copied into the build.
-		projectCopy(CONFIG.twine1.copy);
-	}
 
 	// Build for Twine 2.x.
 	if (_buildForTwine2 && CONFIG.twine2) {
@@ -302,29 +255,9 @@ function compileJavaScript(config, options) {
 	// Join the files.
 	let bundle = concatFiles(walkPaths(config.files));
 
-	// Transpile to ES5 with Babel.
-	if (!_opts.notranspile) {
-		const { transform } = require('@babel/core');
-		bundle = transform(bundle, {
-			// babelHelpers : 'bundled',
-			code     : true,
-			compact  : false,
-			presets  : [['@babel/preset-env']],
-			filename : 'sugarcube.bundle.js'
-		}).code;
-	}
-
 	bundle = `${readFileContents(config.wrap.intro)}\n${bundle}\n${readFileContents(config.wrap.outro)}`;
 
 	return (async source => {
-		if (_opts.unminified) {
-			return [
-				`window.BUILD_TWINE1=${Boolean(options.twine1)}`,
-				`window.BUILD_DEBUG=${_opts.debug || false}`,
-				source
-			].join(';\n');
-		}
-
 		// Minify the code with Terser.
 		const { minify } = require('terser');
 		const minified   = await minify(source, {
@@ -370,14 +303,12 @@ function compileStyles(config) {
 			processed.warnings().forEach(mesg => console.warn(mesg.text));
 		}
 
-		if (!_opts.unminified) {
-			css = new CleanCSS({
-				level         : 1,
-				compatibility : 'ie9'
-			})
-				.minify(css)
-				.styles;
-		}
+		css = new CleanCSS({
+			level         : 1,
+			compatibility : 'ie9'
+		})
+			.minify(css)
+			.styles;
 
 		const fileSlug = _path.basename(filename, '.css').toLowerCase().replace(/[^0-9a-z]+/g, '-');
 

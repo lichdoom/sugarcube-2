@@ -8,7 +8,7 @@
 ***********************************************************************************************************************/
 /*
 	global Alert, Browser, Config, Dialog, Engine, Fullscreen, Has, LoadScreen, SimpleStore, L10n, Macro,
-	       Outliner, Passage, Save, Scripting, Setting, SimpleAudio, State, Story, UI, UIBar, DebugBar,
+	       Outliner, Passage, Save, Scripting, Setting, SimpleAudio, State, Story, UI, UIBar,
 	       Visibility, Wikifier, triggerEvent
 */
 /* eslint-disable no-var */
@@ -128,7 +128,6 @@ Object.defineProperty(window, 'SugarCube', {
 		Story,
 		UI,
 		UIBar,
-		DebugBar,
 		Visibility,
 		Wikifier,
 		session,
@@ -143,8 +142,6 @@ Object.defineProperty(window, 'SugarCube', {
 	Main function, entry point for the story.
 */
 jQuery(() => {
-	if (BUILD_DEBUG) { console.log('[SugarCube/main()] Document loaded; beginning startup.'); }
-
 	/*
 		WARNING!
 
@@ -201,9 +198,6 @@ jQuery(() => {
 		// Initialize the macros.
 		Macro.init();
 
-		// Initialize the debug bar interface.
-		DebugBar.init();
-
 		// Schedule the start of the engine and interfaces once both the DOM is
 		// reporting non-empty dimensions for the viewport and our loading screen
 		// lock is the only remaining one.
@@ -225,16 +219,11 @@ jQuery(() => {
 			// Start the engine.
 			Engine.start();
 
-			// Start the debug bar interface.
-			DebugBar.start();
-
 			// Trigger the `:storyready` global synthetic event.
 			triggerEvent(':storyready');
 
 			// Release our loading screen lock after a short delay.
 			setTimeout(() => LoadScreen.unlock(lockId), Engine.DOM_DELAY * 2);
-
-			if (BUILD_DEBUG) { console.log('[SugarCube/main()] Startup complete; story ready.'); }
 		})
 		.catch(ex => {
 			console.error(ex);

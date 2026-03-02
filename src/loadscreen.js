@@ -24,12 +24,8 @@ var LoadScreen = (() => { // eslint-disable-line no-unused-vars, no-var
 		Initialize management of the loading screen.
 	*/
 	function loadScreenInit() {
-		if (BUILD_DEBUG) { console.log('[LoadScreen/loadScreenInit()]'); }
-
 		// Add a `readystatechange` listener for hiding/showing the loading screen.
 		jQuery(document).on('readystatechange.SugarCube', () => {
-			if (BUILD_DEBUG) { console.log(`[LoadScreen/<readystatechange>] document.readyState: "${document.readyState}"; locks(${_locks.size}):`, _locks); }
-
 			if (_locks.size > 0) {
 				return;
 			}
@@ -60,8 +56,6 @@ var LoadScreen = (() => { // eslint-disable-line no-unused-vars, no-var
 		Clear the loading screen.
 	*/
 	function loadScreenClear() {
-		if (BUILD_DEBUG) { console.log('[LoadScreen/loadScreenClear()]'); }
-
 		// Remove the event listener.
 		jQuery(document).off('readystatechange.SugarCube');
 
@@ -76,8 +70,6 @@ var LoadScreen = (() => { // eslint-disable-line no-unused-vars, no-var
 		Hide the loading screen.
 	*/
 	function loadScreenHide() {
-		if (BUILD_DEBUG) { console.log('[LoadScreen/loadScreenHide()]'); }
-
 		jQuery(document.documentElement).removeAttr('data-init');
 	}
 
@@ -85,8 +77,6 @@ var LoadScreen = (() => { // eslint-disable-line no-unused-vars, no-var
 		Show the loading screen.
 	*/
 	function loadScreenShow() {
-		if (BUILD_DEBUG) { console.log('[LoadScreen/loadScreenShow()]'); }
-
 		jQuery(document.documentElement).attr('data-init', 'loading');
 	}
 
@@ -94,12 +84,8 @@ var LoadScreen = (() => { // eslint-disable-line no-unused-vars, no-var
 		Returns a new lock ID after locking and showing the loading screen.
 	*/
 	function loadScreenLock() {
-		if (BUILD_DEBUG) { console.log('[LoadScreen/loadScreenLock()]'); }
-
 		++_autoId;
 		_locks.add(_autoId);
-
-		if (BUILD_DEBUG) { console.log(`\tacquired loading screen lock; id: ${_autoId}`); }
 
 		loadScreenShow();
 		return _autoId;
@@ -110,16 +96,12 @@ var LoadScreen = (() => { // eslint-disable-line no-unused-vars, no-var
 		trigger a `readystatechange` event.
 	*/
 	function loadScreenUnlock(id) {
-		if (BUILD_DEBUG) { console.log(`[LoadScreen/loadScreenUnlock(id: ${id})]`); }
-
 		if (id == null) { // lazy equality for null
 			throw new Error('LoadScreen.unlock called with a null or undefined ID');
 		}
 
 		if (_locks.has(id)) {
 			_locks.delete(id);
-
-			if (BUILD_DEBUG) { console.log(`\treleased loading screen lock; id: ${id}`); }
 		}
 
 		if (_locks.size === 0) {

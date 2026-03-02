@@ -27,8 +27,6 @@ var Setting = (() => { // eslint-disable-line no-unused-vars, no-var
 	*******************************************************************************/
 
 	function init() {
-		if (BUILD_DEBUG) { console.log('[Setting/init()]'); }
-
 		// Load existing settings.
 		load();
 

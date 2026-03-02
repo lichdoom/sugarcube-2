@@ -6,7 +6,7 @@
 	Use of this source code is governed by a BSD 2-clause "Simplified" License, which may be found in the LICENSE file.
 
 ***********************************************************************************************************************/
-/* global Config, Engine, Macro, State, TempState, Wikifier, cssTimeToMS */
+/* global Engine, Macro, State, TempState, Wikifier, cssTimeToMS */
 
 /*
 	<<repeat>> & <<stop>>
@@ -29,11 +29,6 @@ Macro.add('repeat', {
 		}
 		catch (ex) {
 			return this.error(ex.message);
-		}
-
-		// Custom debug view setup.
-		if (Config.debug) {
-			this.debugView.modes({ block : true });
 		}
 
 		const transition = this.args.length > 1 && this.self.t8nRe.test(this.args[1]);
@@ -139,10 +134,5 @@ Macro.add('stop', {
 		clearInterval(timerId);
 		timers.delete(timerId);
 		TempState.break = 2;
-
-		// Custom debug view setup.
-		if (Config.debug) {
-			this.debugView.modes({ hidden : true });
-		}
 	}
 });

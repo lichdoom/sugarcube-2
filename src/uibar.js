@@ -23,8 +23,6 @@ var UIBar = (() => { // eslint-disable-line no-unused-vars, no-var
 	*******************************************************************************/
 
 	function init() {
-		if (BUILD_DEBUG) { console.log('[UIBar/init()]'); }
-
 		// UI bar already exists, so bail out.
 		if (document.getElementById('ui-bar')) {
 			return;
@@ -85,8 +83,6 @@ var UIBar = (() => { // eslint-disable-line no-unused-vars, no-var
 	*******************************************************************************/
 
 	function destroy() {
-		if (BUILD_DEBUG) { console.log('[UIBar/destroy()]'); }
-
 		if (!_$uiBar) {
 			return;
 		}
@@ -132,8 +128,6 @@ var UIBar = (() => { // eslint-disable-line no-unused-vars, no-var
 	}
 
 	function start() {
-		if (BUILD_DEBUG) { console.log('[UIBar/start()]'); }
-
 		if (!_$uiBar) {
 			return;
 		}
@@ -180,15 +174,7 @@ var UIBar = (() => { // eslint-disable-line no-unused-vars, no-var
 				storyTitleHandler = () => setDisplayTitle(Story.get('StoryDisplayTitle').processText());
 			}
 			else {
-				// For Twine 1.
-				if (BUILD_TWINE1) { // for Twine 1
-					storyTitleHandler = () => setDisplayTitle(Story.get('StoryTitle').processText());
-				}
-
-				// For Twine 2.
-				else {
-					storyTitleHandler = () => setDisplayTitle(Story.name, true);
-				}
+				storyTitleHandler = () => setDisplayTitle(Story.name, true);
 			}
 
 			addUiUpdateHandler(storyTitleHandler);

@@ -6,7 +6,7 @@
 	Use of this source code is governed by a BSD 2-clause "Simplified" License, which may be found in the LICENSE file.
 
 ***********************************************************************************************************************/
-/* global Config, Engine, Macro, Wikifier, triggerEvent */
+/* global Engine, Macro, Wikifier, triggerEvent */
 
 (() => {
 	// Set up our event class name.
@@ -84,12 +84,6 @@
 			// Do nothing if there's no content to render.
 			if (contents.trim() === '') {
 				return;
-			}
-
-			// Custom debug view setup.
-			if (Config.debug) {
-				// QUESTION: Should this `elTag` check be more robust?
-				this.debugView.modes({ block : elTag !== 'span' });
 			}
 
 			// Create a target to hold our contents.

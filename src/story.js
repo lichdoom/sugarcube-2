@@ -6,7 +6,7 @@
 	Use of this source code is governed by a BSD 2-clause "Simplified" License, which may be found in the LICENSE file.
 
 ***********************************************************************************************************************/
-/* global Config, Passage, Wikifier, charAndPosAt, createSlug, decodeEntities, getTypeOf */
+/* global Config, Passage, charAndPosAt, createSlug, decodeEntities, getTypeOf */
 
 var Story = (() => { // eslint-disable-line no-unused-vars, no-var
 	// Story IFID.
@@ -132,178 +132,76 @@ var Story = (() => { // eslint-disable-line no-unused-vars, no-var
 			}
 		}
 
-		if (BUILD_DEBUG) { console.log('[Story/init()]'); }
+		const $storydata = jQuery('tw-storydata');
+		const startNode  = $storydata.attr('startnode') || '';
 
-		// For Twine 1.
-		if (BUILD_TWINE1) {
-			// Additional Twine 1 assertion setup.
-			codePassageNames.push('StorySettings', 'StoryTitle');
-			codeTagNames.push('script', 'stylesheet');
+		// Set the default starting passage.
+		Config.passages.start = null; // no default in Twine 2
 
-			// Set the default starting passage.
-			Config.passages.start = (() => {
-				// Handle the Twine 1.4+ Test Play From Here feature.
-				//
-				// WARNING: Do not remove the `String()` wrapper from or change the quote
-				// style of the `"START_AT"` replacement target.  The former is there to
-				// keep Terser from pruning the code into oblivion—i.e. minifying the
-				// code into something broken.  The latter is there because the Twine 1
-				// pattern that matches it depends upon the double quotes.
-				const testPlay = String("START_AT"); // eslint-disable-line quotes
+		// Process stylesheets.
+		$storydata
+			.children('style') // alternatively: '[type="text/twine-css"]'
+			.each(function (i) {
+				_styles.push(new Passage(`tw-user-style-${i}`, this));
+			});
 
-				if (testPlay !== '') {
-					if (BUILD_DEBUG) { console.log(`\tTest play; starting passage: "${testPlay}"`); }
+		// Process scripts.
+		$storydata
+			.children('script') // alternatively: '[type="text/twine-javascript"]'
+			.each(function (i) {
+				_scripts.push(new Passage(`tw-user-script-${i}`, this));
+			});
 
-					Config.debug = true;
-					return testPlay;
+		// Process passages, excluding any tagged 'Twine.private' or 'annotation'.
+		$storydata
+			.children('tw-passagedata:not([tags~="Twine.private"],[tags~="annotation"])')
+			.each(function () {
+				const $this   = jQuery(this);
+				const pid     = $this.attr('pid') || '';
+				const passage = new Passage($this.attr('name'), this);
+
+				// WARNING: The ordering of the following `if` statements is important!
+
+				// Special case: starting passage.
+				if (pid === startNode && startNode !== '') {
+					Config.passages.start = passage.name;
+					assertNoCodeTags(passage, 'starting');
+					_passages[passage.name] = passage;
 				}
 
-				// In the absence of a `testPlay` value, return 'Start'.
-				return 'Start';
-			})();
+				// Special case: code passages.
+				else if (codePassageNames.includes(passage.name)) {
+					assertNoCodeTags(passage, 'code');
+					// NOTE: Ideally, these should be going into their own store, rather than `_passages`.
+					_passages[passage.name] = passage;
+				}
 
-			// Process passages, excluding any tagged 'Twine.private' or 'annotation'.
-			jQuery('#store-area')
-				.children(':not([tags~="Twine.private"],[tags~="annotation"])')
-				.each(function () {
-					const $this   = jQuery(this);
-					const passage = new Passage($this.attr('tiddler'), this);
+				// Special case: init passages.
+				else if (passage.tags.includes('init')) {
+					assertValidCodeTagUsage(passage);
+					_inits.push(passage);
+				}
 
-					// WARNING: The ordering of the following `if` statements is important!
+				// Special case: widget passages.
+				else if (passage.tags.includes('widget')) {
+					assertValidCodeTagUsage(passage);
+					_widgets.push(passage);
+				}
 
-					// Special case: starting passage.
-					if (passage.name === Config.passages.start) {
-						assertNoCodeTags(passage, 'starting');
-						_passages[passage.name] = passage;
-					}
+				// All other passages.
+				else {
+					_passages[passage.name] = passage;
+				}
+			});
 
-					// Special case: code passages.
-					else if (codePassageNames.includes(passage.name)) {
-						assertNoCodeTags(passage, 'code');
-						// NOTE: Ideally, these should be going into their own store, rather than `_passages`.
-						_passages[passage.name] = passage;
-					}
+		// Get the story's IFID.
+		_ifId = $storydata.attr('ifid');
 
-					// Special case: init passages.
-					else if (passage.tags.includes('init')) {
-						assertValidCodeTagUsage(passage);
-						_inits.push(passage);
-					}
-
-					// Special case: script passages.
-					else if (passage.tags.includes('script')) {
-						assertValidCodeTagUsage(passage);
-						_scripts.push(passage);
-					}
-
-					// Special case: stylesheet passages.
-					else if (passage.tags.includes('stylesheet')) {
-						assertValidCodeTagUsage(passage);
-						_styles.push(passage);
-					}
-
-					// Special case: widget passages.
-					else if (passage.tags.includes('widget')) {
-						assertValidCodeTagUsage(passage);
-						_widgets.push(passage);
-					}
-
-					// All other passages.
-					else {
-						_passages[passage.name] = passage;
-					}
-				});
-
-			// Get the story's name.
-			if (Object.hasOwn(_passages, 'StoryTitle')) {
-				const buf = document.createDocumentFragment();
-				new Wikifier(buf, _passages.StoryTitle.processText().trim());
-				_name = generateName(buf.textContent);
-			}
-			else {
-				throw new Error('cannot find the "StoryTitle" special passage');
-			}
-		}
-
-		// For Twine 2.
-		else {
-			const $storydata = jQuery('tw-storydata');
-			const startNode  = $storydata.attr('startnode') || '';
-
-			// Set the default starting passage.
-			Config.passages.start = null; // no default in Twine 2
-
-			// Process story options.
-			//
-			// NOTE: Currently, the only option of interest is 'debug', so we
-			// simply use a regular expression to check for it.
-			Config.debug = /\bdebug\b/.test($storydata.attr('options'));
-
-			// Process stylesheets.
-			$storydata
-				.children('style') // alternatively: '[type="text/twine-css"]'
-				.each(function (i) {
-					_styles.push(new Passage(`tw-user-style-${i}`, this));
-				});
-
-			// Process scripts.
-			$storydata
-				.children('script') // alternatively: '[type="text/twine-javascript"]'
-				.each(function (i) {
-					_scripts.push(new Passage(`tw-user-script-${i}`, this));
-				});
-
-			// Process passages, excluding any tagged 'Twine.private' or 'annotation'.
-			$storydata
-				.children('tw-passagedata:not([tags~="Twine.private"],[tags~="annotation"])')
-				.each(function () {
-					const $this   = jQuery(this);
-					const pid     = $this.attr('pid') || '';
-					const passage = new Passage($this.attr('name'), this);
-
-					// WARNING: The ordering of the following `if` statements is important!
-
-					// Special case: starting passage.
-					if (pid === startNode && startNode !== '') {
-						Config.passages.start = passage.name;
-						assertNoCodeTags(passage, 'starting');
-						_passages[passage.name] = passage;
-					}
-
-					// Special case: code passages.
-					else if (codePassageNames.includes(passage.name)) {
-						assertNoCodeTags(passage, 'code');
-						// NOTE: Ideally, these should be going into their own store, rather than `_passages`.
-						_passages[passage.name] = passage;
-					}
-
-					// Special case: init passages.
-					else if (passage.tags.includes('init')) {
-						assertValidCodeTagUsage(passage);
-						_inits.push(passage);
-					}
-
-					// Special case: widget passages.
-					else if (passage.tags.includes('widget')) {
-						assertValidCodeTagUsage(passage);
-						_widgets.push(passage);
-					}
-
-					// All other passages.
-					else {
-						_passages[passage.name] = passage;
-					}
-				});
-
-			// Get the story's IFID.
-			_ifId = $storydata.attr('ifid');
-
-			// Get the story's name.
-			//
-			// QUESTION: Maybe `$storydata.attr('name')` should be used instead of `'{{STORY_NAME}}'`?
-			// _name = generateName($storydata.attr('name'));
-			_name = generateName('{{STORY_NAME}}');
-		}
+		// Get the story's name.
+		//
+		// QUESTION: Maybe `$storydata.attr('name')` should be used instead of `'{{STORY_NAME}}'`?
+		// _name = generateName($storydata.attr('name'));
+		_name = generateName('{{STORY_NAME}}');
 
 		// Get the story's ID.
 		_id = generateId(_name);

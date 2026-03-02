@@ -36,8 +36,6 @@ var Dialog = (() => { // eslint-disable-line no-unused-vars, no-var
 	*******************************************************************************/
 
 	function init() {
-		if (BUILD_DEBUG) { console.log('[Dialog/init()]'); }
-
 		if (document.getElementById('ui-dialog')) {
 			return;
 		}

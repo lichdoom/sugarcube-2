@@ -6,7 +6,7 @@
 	Use of this source code is governed by a BSD 2-clause "Simplified" License, which may be found in the LICENSE file.
 
 ***********************************************************************************************************************/
-/* global Config, Engine, Has, Macro, SimpleAudio, Story */
+/* global Engine, Has, Macro, SimpleAudio, Story */
 
 (() => {
 	if (Has.audio) {
@@ -253,11 +253,6 @@
 							selected.unload();
 							break;
 					}
-
-					// Custom debug view setup.
-					if (Config.debug) {
-						this.debugView.modes({ hidden : true });
-					}
 				}
 				catch (ex) {
 					return this.error(`error executing action: ${ex.message}`);
@@ -285,16 +280,6 @@
 				catch (ex) {
 					return this.error(ex.message);
 				}
-
-				// If in Test Mode and no supported sources were specified, return an error.
-				if (Config.debug && !SimpleAudio.tracks.get(id).hasSource()) {
-					return this.error(`track ID "${id}": no supported audio sources found`);
-				}
-
-				// Custom debug view setup.
-				if (Config.debug) {
-					this.debugView.modes({ hidden : true });
-				}
 			}
 		});
 
@@ -316,15 +301,6 @@
 					return this.error('no tracks defined via <<track>>');
 				}
 
-				// Initial debug view setup for `<<createaudiogroup>>`.
-				if (Config.debug) {
-					this.debugView
-						.modes({
-							nonvoid : false,
-							hidden  : true
-						});
-				}
-
 				const groupId  = String(this.args[0]).trim();
 				const trackIds = [];
 
@@ -334,16 +310,6 @@
 					}
 
 					trackIds.push(String(this.payload[i].args[0]).trim());
-
-					// Custom debug view setup for the current `<<track>>`.
-					if (Config.debug) {
-						this
-							.createDebugView(this.payload[i].name, this.payload[i].source)
-							.modes({
-								nonvoid : false,
-								hidden  : true
-							});
-					}
 				}
 
 				try {
@@ -351,16 +317,6 @@
 				}
 				catch (ex) {
 					return this.error(ex.message);
-				}
-
-				// Custom fake debug view setup for `<</createaudiogroup>>`.
-				if (Config.debug) {
-					this
-						.createDebugView(`/${this.name}`, `<</${this.name}>>`)
-						.modes({
-							nonvoid : false,
-							hidden  : true
-						});
 				}
 			}
 		});
@@ -381,15 +337,6 @@
 
 				if (this.payload.length === 1) {
 					return this.error('no tracks defined via <<track>>');
-				}
-
-				// Initial debug view setup for `<<createplaylist>>`.
-				if (Config.debug) {
-					this.debugView
-						.modes({
-							nonvoid : false,
-							hidden  : true
-						});
 				}
 
 				const listId    = String(this.args[0]).trim();
@@ -457,16 +404,6 @@
 					}
 
 					trackObjs.push(trackObj);
-
-					// Custom debug view setup for the current `<<track>>`.
-					if (Config.debug) {
-						this
-							.createDebugView(this.payload[i].name, this.payload[i].source)
-							.modes({
-								nonvoid : false,
-								hidden  : true
-							});
-					}
 				}
 
 				try {
@@ -474,16 +411,6 @@
 				}
 				catch (ex) {
 					return this.error(ex.message);
-				}
-
-				// Custom fake debug view setup for `<</createplaylist>>`.
-				if (Config.debug) {
-					this
-						.createDebugView(`/${this.name}`, `<</${this.name}>>`)
-						.modes({
-							nonvoid : false,
-							hidden  : true
-						});
 				}
 			}
 		});
@@ -576,11 +503,6 @@
 						case 'unload':
 							SimpleAudio.unload();
 							break;
-					}
-
-					// Custom debug view setup.
-					if (Config.debug) {
-						this.debugView.modes({ hidden : true });
 					}
 				}
 				catch (ex) {
@@ -788,11 +710,6 @@
 							list.unload();
 							break;
 					}
-
-					// Custom debug view setup.
-					if (Config.debug) {
-						this.debugView.modes({ hidden : true });
-					}
 				}
 				catch (ex) {
 					return this.error(`error executing action: ${ex.message}`);
@@ -816,11 +733,6 @@
 				}
 
 				SimpleAudio.groups.delete(id);
-
-				// Custom debug view setup.
-				if (Config.debug) {
-					this.debugView.modes({ hidden : true });
-				}
 			}
 		});
 
@@ -840,11 +752,6 @@
 				}
 
 				SimpleAudio.lists.delete(id);
-
-				// Custom debug view setup.
-				if (Config.debug) {
-					this.debugView.modes({ hidden : true });
-				}
 			}
 		});
 
@@ -875,12 +782,6 @@
 			skipArgs : true,
 
 			handler() {
-				/* no-op */
-
-				// Custom debug view setup.
-				if (Config.debug) {
-					this.debugView.modes({ hidden : true });
-				}
 			}
 		});
 	}

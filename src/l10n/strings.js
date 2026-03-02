@@ -169,41 +169,6 @@ var l10nStrings = { // eslint-disable-line no-unused-vars, no-var
 
 
 	/*******************************************************************************
-		Debugging: Debug bar.
-	*******************************************************************************/
-
-	debugBarLabelToggle : 'Toggle the debug bar',
-
-	debugBarLabelViewsToggle : 'Toggle the debug views',
-
-	debugBarLabelWatchAdd : 'Add a new watch',
-
-	debugBarLabelWatchAll : 'Watch all',
-
-	debugBarLabelWatchClear : 'Clear all watches',
-
-	debugBarLabelWatchDelete : 'Delete this watch',
-
-	debugBarLabelWatchPlaceholder : 'variable name',
-
-	debugBarLabelPassagePlaceholder : 'passage name',
-
-	debugBarLabelPassagePlay : 'Play passage',
-
-	debugBarLabelWatchToggle : 'Toggle the watch panel',
-
-	debugBarMesgNoWatches : 'No watches set',
-
-	debugBarTextAdd : 'Add',
-
-	debugBarTextPassage : 'Passage',
-
-	debugBarTextViews : 'Views',
-
-	debugBarTextWatch : 'Watch',
-
-
-	/*******************************************************************************
 		Macros.
 	*******************************************************************************/
 
