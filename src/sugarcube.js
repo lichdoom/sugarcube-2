@@ -108,7 +108,7 @@ var storage = null;
 	testing for the object—e.g., `"SugarCube" in window`—and contains exported identifiers
 	for debugging purposes.
 */
-Object.defineProperty(window, 'SugarCube', {
+Object.defineProperty(window, version.name, {
 	// WARNING: We need to assign new values at points, so seal it, do not freeze it.
 	value : Object.seal(Object.assign(Object.create(null), {
 		Browser,
@@ -158,13 +158,14 @@ jQuery(() => {
 
 	// From this point on it's promises all the way down.
 	new Promise(async resolve => {
+		const name = version.name;
 		// Initialize the story.
 		Story.init();
 
 		// Initialize the databases.
 		try {
-			SugarCube.storage = storage = SimpleStore.create(Story.id, true); // eslint-disable-line no-undef
-			SugarCube.session = session = SimpleStore.create(Story.id, false); // eslint-disable-line no-undef
+			window[name].storage = storage = SimpleStore.create(Story.id, true);
+			window[name].session = session = SimpleStore.create(Story.id, false);
 			// Wait for the cache to be populated
 			await storage.ready;
 		}
@@ -193,7 +194,7 @@ jQuery(() => {
 		Save.init();
 
 		// Initialize the settings.
-		Setting.init();
+		Setting.init(name);
 
 		// Initialize the macros.
 		Macro.init();

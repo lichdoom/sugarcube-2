@@ -20,13 +20,15 @@ var Setting = (() => { // eslint-disable-line no-unused-vars, no-var
 
 	// Setting definition array.
 	const _definitions = [];
+	let _name;
 
 
 	/*******************************************************************************
 		Initialization Functions.
 	*******************************************************************************/
 
-	function init() {
+	function init(name) {
+		_name = name;
 		// Load existing settings.
 		load();
 
@@ -45,7 +47,7 @@ var Setting = (() => { // eslint-disable-line no-unused-vars, no-var
 	*******************************************************************************/
 
 	function updateSettingsObject(value) {
-		window.SugarCube.settings = settings = value;
+		window[_name].settings = settings = value;
 	}
 
 	function createResultObject(def) {
